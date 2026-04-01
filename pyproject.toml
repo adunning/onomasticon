@@ -1,0 +1,7 @@
+[project]
+name = "onomasticon"
+version = "0.1.0"
+description = "Resolve, model, and render scholarly entities such as persons, places, organizations, and works across digital catalogues, editions, and publishing workflows."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
