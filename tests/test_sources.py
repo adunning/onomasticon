@@ -17,9 +17,13 @@ from onomasticon.core.identifiers import Identifier
 from onomasticon.core.properties import StatementProperty
 from onomasticon.core.repository import EntityValidationError, EntityWriteError
 from onomasticon.core.statements import (
+    Ascription,
+    AscriptionValue,
     Certainty,
     DateValue,
     IdentifierValue,
+    Qualifier,
+    QualifierProperty,
     Reference,
     Sex,
     SexValue,
@@ -55,6 +59,17 @@ def test_source_record_round_trips_through_toml() -> None:
                 certainty=Certainty.HIGH,
             ),
             Statement(
+                property=StatementProperty.AUTHOR,
+                value=TextValue("Attributed to Geoffrey Chaucer"),
+                qualifiers=(
+                    Qualifier(
+                        property=QualifierProperty.ASCRIPTION,
+                        value=AscriptionValue(Ascription.ATTRIBUTED),
+                    ),
+                ),
+                status=StatementStatus.ATTESTED_ONLY,
+            ),
+            Statement(
                 property=StatementProperty.SAME_AS,
                 value=IdentifierValue(Identifier("wikidata", "Q12345")),
                 status=StatementStatus.ATTESTED_ONLY,
@@ -68,6 +83,10 @@ def test_source_record_round_trips_through_toml() -> None:
 
     assert reparsed == record
     assert "[[appellations]]" in serialized
+    assert (
+        'qualifiers = [{ property = "ascription", ascription = "attributed" }]'
+        in serialized
+    )
 
 
 def test_source_layout_uses_source_and_record_identifier() -> None:

@@ -31,9 +31,13 @@ from onomasticon.core.repository import (
     RepositoryLayout,
 )
 from onomasticon.core.statements import (
+    Ascription,
+    AscriptionValue,
     Certainty,
     DateValue,
     EntityValue,
+    Qualifier,
+    QualifierProperty,
     Reference,
     Sex,
     SexValue,
@@ -62,6 +66,12 @@ def test_entity_round_trips_through_toml() -> None:
                 references=(
                     Reference(source="wikidata", record="Q12345", locator="P50"),
                 ),
+                qualifiers=(
+                    Qualifier(
+                        property=QualifierProperty.ASCRIPTION,
+                        value=AscriptionValue(Ascription.ATTRIBUTED),
+                    ),
+                ),
                 certainty=Certainty.HIGH,
             ),
         ),
@@ -74,6 +84,10 @@ def test_entity_round_trips_through_toml() -> None:
     assert reparsed == entity
     assert isinstance(reparsed, Work)
     assert "[[appellations]]" in serialized
+    assert (
+        'qualifiers = [{ property = "ascription", ascription = "attributed" }]'
+        in serialized
+    )
 
 
 def test_repository_layout_uses_one_entity_per_file() -> None:
@@ -589,6 +603,26 @@ def test_repository_rejects_unknown_statement_properties() -> None:
     ):
         repository.loads(
             'id = "a1b2c3"\n[[statements]]\nproperty = "unknown"\ntext = "x"\n'
+        )
+
+
+def test_repository_rejects_invalid_qualifiers() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    with pytest.raises(
+        EntityValidationError,
+        match="Unknown qualifier property: unknown",
+    ):
+        repository.loads(
+            'id = "a1b2c3"\n[[statements]]\nproperty = "author"\nentity = "p9x2k4"\nqualifiers = [{ property = "unknown", text = "x" }]\n'
+        )
+
+    with pytest.raises(
+        EntityValidationError,
+        match="Unknown ascription value: doubtful",
+    ):
+        repository.loads(
+            'id = "a1b2c3"\n[[statements]]\nproperty = "author"\nentity = "p9x2k4"\nqualifiers = [{ property = "ascription", ascription = "doubtful" }]\n'
         )
 
 

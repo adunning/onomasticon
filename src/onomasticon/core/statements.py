@@ -114,8 +114,42 @@ class SexValue:
         object.__setattr__(self, "sex", normalized)
 
 
+class Ascription(StrEnum):
+    """Controlled ascription values for qualified statements."""
+
+    ATTRIBUTED = "attributed"
+    PSEUDONYMOUS = "pseudonymous"
+    MISATTRIBUTED = "misattributed"
+    ANONYMOUS = "anonymous"
+
+
+@dataclass(slots=True, frozen=True)
+class AscriptionValue:
+    """A qualifier value carrying a controlled ascription value."""
+
+    ascription: Ascription | str
+
+    def __post_init__(self) -> None:
+        ascription_value = require_non_empty_string(
+            self.ascription,
+            field_name="ascription",
+        )
+        try:
+            normalized = Ascription(ascription_value)
+        except ValueError as exc:
+            msg = f"Unknown ascription value: {ascription_value}."
+            raise ValueError(msg) from exc
+        object.__setattr__(self, "ascription", normalized)
+
+
 type StatementValue = (
-    EntityValue | IdentifierValue | TextValue | LanguageTagValue | DateValue | SexValue
+    EntityValue
+    | IdentifierValue
+    | TextValue
+    | LanguageTagValue
+    | DateValue
+    | SexValue
+    | AscriptionValue
 )
 
 
@@ -136,6 +170,29 @@ class Certainty(StrEnum):
     HIGH = "high"
 
 
+class QualifierProperty(StrEnum):
+    """Controlled qualifier vocabulary for the current model."""
+
+    ASCRIPTION = "ascription"
+
+
+@dataclass(slots=True, frozen=True)
+class Qualifier:
+    """One controlled qualifier on a scholarly statement."""
+
+    property: QualifierProperty | str
+    value: StatementValue
+
+    def __post_init__(self) -> None:
+        property_value = require_non_empty_string(self.property, field_name="property")
+        try:
+            normalized = QualifierProperty(property_value)
+        except ValueError as exc:
+            msg = f"Unknown qualifier property: {property_value}."
+            raise ValueError(msg) from exc
+        object.__setattr__(self, "property", normalized)
+
+
 @dataclass(slots=True, frozen=True)
 class Statement:
     """One normalized scholarly statement."""
@@ -143,6 +200,7 @@ class Statement:
     property: StatementProperty | str
     value: StatementValue
     references: tuple[Reference, ...] = field(default_factory=tuple)
+    qualifiers: tuple[Qualifier, ...] = field(default_factory=tuple)
     status: StatementStatus = StatementStatus.ACCEPTED
     certainty: Certainty | None = None
     note: str | None = None

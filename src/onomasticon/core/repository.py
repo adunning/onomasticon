@@ -27,11 +27,13 @@ from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import LOCAL_IDENTIFIER_LENGTH
 from onomasticon.core.properties import StatementProperty, allowed_target_entity_types
 from onomasticon.core.statements import (
+    AscriptionValue,
     Certainty,
     DateValue,
     EntityValue,
     IdentifierValue,
     LanguageTagValue,
+    Qualifier,
     Reference,
     SexValue,
     Statement,
@@ -402,7 +404,9 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         "lang",
         "date",
         "sex",
+        "ascription",
         "refs",
+        "qualifiers",
         "status",
         "certainty",
         "note",
@@ -414,7 +418,7 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         raise EntityValidationError(msg)
     value_keys = [
         key
-        for key in ("entity", "identifier", "text", "lang", "date", "sex")
+        for key in ("entity", "identifier", "text", "lang", "date", "sex", "ascription")
         if key in data
     ]
     if len(value_keys) != 1:
@@ -445,16 +449,98 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
                 value = SexValue(_require_raw_string(raw_value, field_name="sex"))
             except ValueError as exc:
                 raise EntityValidationError(str(exc)) from exc
+        case "ascription":
+            try:
+                value = AscriptionValue(
+                    _require_raw_string(raw_value, field_name="ascription")
+                )
+            except ValueError as exc:
+                raise EntityValidationError(str(exc)) from exc
         case _:
             raise AssertionError(value_key)
     return Statement(
         property=_parse_statement_property(data.get("property")),
         value=value,
         references=_parse_references(data.get("refs")),
+        qualifiers=_parse_qualifiers(data.get("qualifiers")),
         status=_parse_statement_status(data.get("status")),
         certainty=_parse_certainty(data.get("certainty")),
         note=_optional_string(data, "note"),
     )
+
+
+def _parse_qualifiers(raw: object) -> tuple[Qualifier, ...]:
+    if raw is None:
+        return ()
+    raw_list = _require_list(raw, field_name="qualifiers")
+    return tuple(_qualifier_from_mapping(_require_table(item)) for item in raw_list)
+
+
+def _qualifier_from_mapping(data: dict[str, object]) -> Qualifier:
+    allowed_keys = {
+        "property",
+        "entity",
+        "identifier",
+        "text",
+        "lang",
+        "date",
+        "sex",
+        "ascription",
+    }
+    extra_keys = set(data) - allowed_keys
+    if extra_keys:
+        extras = ", ".join(sorted(extra_keys))
+        msg = f"Unexpected qualifier fields: {extras}."
+        raise EntityValidationError(msg)
+    value_keys = [
+        key
+        for key in ("entity", "identifier", "text", "lang", "date", "sex", "ascription")
+        if key in data
+    ]
+    if len(value_keys) != 1:
+        msg = "Each qualifier must define exactly one value field."
+        raise EntityValidationError(msg)
+    value_key = value_keys[0]
+    raw_value = data[value_key]
+    match value_key:
+        case "entity":
+            value = EntityValue(_require_raw_string(raw_value, field_name="entity"))
+        case "identifier":
+            identifier = _require_table(raw_value)
+            value = IdentifierValue(
+                Identifier(
+                    scheme=_require_string(identifier, "scheme"),
+                    value=_require_string(identifier, "value"),
+                    note=_optional_string(identifier, "note"),
+                )
+            )
+        case "text":
+            value = TextValue(_require_raw_string(raw_value, field_name="text"))
+        case "lang":
+            value = LanguageTagValue(_require_raw_string(raw_value, field_name="lang"))
+        case "date":
+            value = DateValue(_parse_temporal_value(raw_value))
+        case "sex":
+            try:
+                value = SexValue(_require_raw_string(raw_value, field_name="sex"))
+            except ValueError as exc:
+                raise EntityValidationError(str(exc)) from exc
+        case "ascription":
+            try:
+                value = AscriptionValue(
+                    _require_raw_string(raw_value, field_name="ascription")
+                )
+            except ValueError as exc:
+                raise EntityValidationError(str(exc)) from exc
+        case _:
+            raise AssertionError(value_key)
+    try:
+        return Qualifier(
+            property=_require_string(data, "property"),
+            value=value,
+        )
+    except ValueError as exc:
+        raise EntityValidationError(str(exc)) from exc
 
 
 def _parse_references(raw: object) -> tuple[Reference, ...]:
@@ -499,6 +585,8 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
                 lines.append(f"date = {_dump_temporal_value(temporal)}")
             case SexValue(sex=sex):
                 lines.append(f"sex = {_quote_string(sex.value)}")
+            case AscriptionValue(ascription=ascription):
+                lines.append(f"ascription = {_quote_string(ascription.value)}")
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
         if statement.status is not StatementStatus.ACCEPTED:
@@ -510,6 +598,11 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
                 _dump_reference(reference) for reference in statement.references
             )
             lines.append(f"refs = [{refs}]")
+        if statement.qualifiers:
+            qualifiers = ", ".join(
+                _dump_qualifier(qualifier) for qualifier in statement.qualifiers
+            )
+            lines.append(f"qualifiers = [{qualifiers}]")
     return lines
 
 
@@ -564,6 +657,27 @@ def _dump_reference(reference: Reference) -> str:
         parts.append(f"locator = {_quote_string(reference.locator)}")
     if reference.note is not None:
         parts.append(f"note = {_quote_string(reference.note)}")
+    return "{ " + ", ".join(parts) + " }"
+
+
+def _dump_qualifier(qualifier: Qualifier) -> str:
+    property_name = getattr(qualifier.property, "value", qualifier.property)
+    parts = [f"property = {_quote_string(property_name)}"]
+    match qualifier.value:
+        case EntityValue(entity_id=entity_id):
+            parts.append(f"entity = {_quote_string(entity_id)}")
+        case IdentifierValue(identifier=identifier):
+            parts.append(f"identifier = {_dump_inline_identifier(identifier)}")
+        case TextValue(text=text):
+            parts.append(f"text = {_quote_string(text)}")
+        case LanguageTagValue(language_tag=language_tag):
+            parts.append(f"lang = {_quote_string(language_tag)}")
+        case DateValue(temporal=temporal):
+            parts.append(f"date = {_dump_temporal_value(temporal)}")
+        case SexValue(sex=sex):
+            parts.append(f"sex = {_quote_string(sex.value)}")
+        case AscriptionValue(ascription=ascription):
+            parts.append(f"ascription = {_quote_string(ascription.value)}")
     return "{ " + ", ".join(parts) + " }"
 
 

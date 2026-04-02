@@ -15,7 +15,10 @@ from onomasticon.core.properties import (
     property_allowed_for_entity_type,
 )
 from onomasticon.core.statements import (
+    Ascription,
     Certainty,
+    Qualifier,
+    QualifierProperty,
     Reference,
     Sex,
     Statement,
@@ -46,6 +49,9 @@ __all__ = [
     "Organization",
     "OrganizationSubtype",
     "PlaceSubtype",
+    "Ascription",
+    "Qualifier",
+    "QualifierProperty",
     "Reference",
     "RepositoryError",
     "RepositoryLayout",

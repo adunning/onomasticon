@@ -26,10 +26,12 @@ from onomasticon.core.repository import (
     _require_table,
 )
 from onomasticon.core.statements import (
+    AscriptionValue,
     DateValue,
     EntityValue,
     IdentifierValue,
     LanguageTagValue,
+    Qualifier,
     Reference,
     SexValue,
     Statement,
@@ -167,6 +169,7 @@ def _parse_source_statements(
                 property=statement.property,
                 value=statement.value,
                 references=references,
+                qualifiers=statement.qualifiers,
                 status=statement.status,
                 certainty=statement.certainty,
                 note=statement.note,
@@ -223,6 +226,8 @@ def _dump_source_statements(
                     )
             case SexValue(sex=sex):
                 lines.append(f"sex = {_quote_string(sex.value)}")
+            case AscriptionValue(ascription=ascription):
+                lines.append(f"ascription = {_quote_string(ascription.value)}")
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
         if statement.status is not StatementStatus.ACCEPTED:
@@ -239,6 +244,11 @@ def _dump_source_statements(
                 for reference in statement.references
             )
             lines.append(f"refs = [{refs}]")
+        if statement.qualifiers:
+            qualifiers = ", ".join(
+                _dump_source_qualifier(qualifier) for qualifier in statement.qualifiers
+            )
+            lines.append(f"qualifiers = [{qualifiers}]")
     return lines
 
 
@@ -260,6 +270,36 @@ def _dump_source_reference(
         )
         return _dump_reference(compact)
     return _dump_reference(reference)
+
+
+def _dump_source_qualifier(qualifier: Qualifier) -> str:
+    property_name = getattr(qualifier.property, "value", qualifier.property)
+    parts = [f"property = {_quote_string(property_name)}"]
+    match qualifier.value:
+        case EntityValue(entity_id=entity_id):
+            parts.append(f"entity = {_quote_string(entity_id)}")
+        case IdentifierValue(identifier=identifier):
+            parts.append(
+                "identifier = "
+                f"{{ scheme = {_quote_string(identifier.scheme)}, value = {_quote_string(identifier.value)} }}"
+            )
+        case TextValue(text=text):
+            parts.append(f"text = {_quote_string(text)}")
+        case LanguageTagValue(language_tag=language_tag):
+            parts.append(f"lang = {_quote_string(language_tag)}")
+        case DateValue(temporal=temporal):
+            if temporal.label is None:
+                parts.append(f"date = {_quote_string(temporal.edtf)}")
+            else:
+                parts.append(
+                    "date = "
+                    f"{{ edtf = {_quote_string(temporal.edtf)}, label = {_quote_string(temporal.label)} }}"
+                )
+        case SexValue(sex=sex):
+            parts.append(f"sex = {_quote_string(sex.value)}")
+        case AscriptionValue(ascription=ascription):
+            parts.append(f"ascription = {_quote_string(ascription.value)}")
+    return "{ " + ", ".join(parts) + " }"
 
 
 def _parse_source_record_subtype(

@@ -5,11 +5,15 @@ import pytest
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.properties import StatementProperty
 from onomasticon.core.statements import (
+    Ascription,
+    AscriptionValue,
     Certainty,
     DateValue,
     EntityValue,
     IdentifierValue,
     LanguageTagValue,
+    Qualifier,
+    QualifierProperty,
     Reference,
     Statement,
     StatementStatus,
@@ -34,6 +38,24 @@ def test_statement_can_carry_reference_and_entity_value() -> None:
     assert statement.references[0].locator == "P50"
     assert statement.status is StatementStatus.ACCEPTED
     assert statement.certainty is Certainty.HIGH
+
+
+def test_statement_can_carry_ascription_qualifiers() -> None:
+    statement = Statement(
+        property=StatementProperty.AUTHOR,
+        value=EntityValue("p9x2k4"),
+        qualifiers=(
+            Qualifier(
+                property=QualifierProperty.ASCRIPTION,
+                value=AscriptionValue(Ascription.ATTRIBUTED),
+            ),
+        ),
+    )
+
+    assert statement.qualifiers[0].property is QualifierProperty.ASCRIPTION
+    qualifier_value = statement.qualifiers[0].value
+    assert isinstance(qualifier_value, AscriptionValue)
+    assert qualifier_value.ascription is Ascription.ATTRIBUTED
 
 
 @pytest.mark.parametrize(
@@ -141,3 +163,13 @@ def test_statement_normalizes_string_properties_to_controlled_values() -> None:
 def test_statement_rejects_unknown_properties() -> None:
     with pytest.raises(ValueError, match="Unknown statement property: unknown"):
         Statement(property="unknown", value=TextValue("x"))
+
+
+def test_qualifier_rejects_unknown_properties() -> None:
+    with pytest.raises(ValueError, match="Unknown qualifier property: unknown"):
+        Qualifier(property="unknown", value=TextValue("x"))
+
+
+def test_ascription_value_rejects_unknown_values() -> None:
+    with pytest.raises(ValueError, match="Unknown ascription value: doubtful"):
+        AscriptionValue("doubtful")
