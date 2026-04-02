@@ -90,8 +90,32 @@ class DateValue:
     temporal: TemporalValue
 
 
+class Sex(StrEnum):
+    """Controlled sex values."""
+
+    MALE = "male"
+    FEMALE = "female"
+    UNKNOWN = "unknown"
+
+
+@dataclass(slots=True, frozen=True)
+class SexValue:
+    """A statement value carrying a controlled sex value."""
+
+    sex: Sex | str
+
+    def __post_init__(self) -> None:
+        sex_value = require_non_empty_string(self.sex, field_name="sex")
+        try:
+            normalized = Sex(sex_value)
+        except ValueError as exc:
+            msg = f"Unknown sex value: {sex_value}."
+            raise ValueError(msg) from exc
+        object.__setattr__(self, "sex", normalized)
+
+
 type StatementValue = (
-    EntityValue | IdentifierValue | TextValue | LanguageTagValue | DateValue
+    EntityValue | IdentifierValue | TextValue | LanguageTagValue | DateValue | SexValue
 )
 
 

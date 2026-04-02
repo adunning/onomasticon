@@ -4,9 +4,16 @@ from dataclasses import is_dataclass
 
 import pytest
 
-from onomasticon.core.entities import Entity, Organization, Person
+from onomasticon.core.entities import (
+    Entity,
+    Organization,
+    OrganizationSubtype,
+    Person,
+    Place,
+    PlaceSubtype,
+)
 from onomasticon.core.properties import StatementProperty
-from onomasticon.core.statements import DateValue, EntityValue, Statement
+from onomasticon.core.statements import DateValue, EntityValue, Sex, SexValue, Statement
 from onomasticon.core.temporal import TemporalValue
 
 
@@ -49,6 +56,17 @@ def test_organization_is_a_first_class_entity() -> None:
     assert isinstance(entity, Organization)
 
 
+def test_place_and_organization_can_carry_subtypes() -> None:
+    place = Place(id="a1b2c3", subtype=PlaceSubtype.COUNTRY)
+    organization = Organization(
+        id="b1c2d3",
+        subtype=OrganizationSubtype.RELIGIOUS_ORDER,
+    )
+
+    assert place.subtype is PlaceSubtype.COUNTRY
+    assert organization.subtype is OrganizationSubtype.RELIGIOUS_ORDER
+
+
 def test_person_rejects_inapplicable_statement_properties() -> None:
     with pytest.raises(ValueError, match="not allowed on person entities"):
         Person(
@@ -76,7 +94,7 @@ def test_person_accepts_person_specific_relationship_properties() -> None:
             ),
             Statement(
                 property=StatementProperty.SEX,
-                value=EntityValue("d3e4f5"),
+                value=SexValue(Sex.MALE),
             ),
         ),
     )

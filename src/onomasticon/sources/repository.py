@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
-from onomasticon.core.entities import EntityType
+from onomasticon.core.entities import (
+    EntityType,
+    OrganizationSubtype,
+    PlaceSubtype,
+)
 from onomasticon.core.repository import (
     _dump_identifiers,
     _parse_identifiers,
@@ -25,6 +29,7 @@ from onomasticon.core.statements import (
     IdentifierValue,
     LanguageTagValue,
     Reference,
+    SexValue,
     Statement,
     StatementStatus,
     TextValue,
@@ -68,6 +73,8 @@ class SourceRecordRepository:
         ]
         if record.entity_type is not None:
             lines.append(f"entity_type = {_quote_string(record.entity_type.value)}")
+        if record.subtype is not None:
+            lines.append(f"subtype = {_quote_string(record.subtype.value)}")
         if record.note is not None:
             lines.append(f"note = {_quote_string(record.note)}")
         lines.extend(_dump_identifiers(record.identifiers))
@@ -107,6 +114,7 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
         "source",
         "record_id",
         "entity_type",
+        "subtype",
         "identifiers",
         "note",
         "statements",
@@ -128,6 +136,10 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
         source=_require_string(data, "source"),
         record_id=_require_string(data, "record_id"),
         entity_type=entity_type,
+        subtype=_parse_source_record_subtype(
+            entity_type,
+            _optional_string(data, "subtype"),
+        ),
         identifiers=_parse_identifiers(data.get("identifiers")),
         statements=_parse_source_statements(
             data.get("statements"),
@@ -210,6 +222,8 @@ def _dump_source_statements(
                         "date = "
                         f"{{ edtf = {_quote_string(temporal.edtf)}, label = {_quote_string(temporal.label)} }}"
                     )
+            case SexValue(sex=sex):
+                lines.append(f"sex = {_quote_string(sex.value)}")
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
         if statement.status is not StatementStatus.ACCEPTED:
@@ -247,3 +261,27 @@ def _dump_source_reference(
         )
         return _dump_reference(compact)
     return _dump_reference(reference)
+
+
+def _parse_source_record_subtype(
+    entity_type: EntityType | None,
+    subtype_raw: str | None,
+) -> PlaceSubtype | OrganizationSubtype | None:
+    if subtype_raw is None:
+        return None
+    match entity_type:
+        case EntityType.PLACE:
+            try:
+                return PlaceSubtype(subtype_raw)
+            except ValueError as exc:
+                msg = f"Unknown place subtype: {subtype_raw}."
+                raise EntityValidationError(msg) from exc
+        case EntityType.ORGANIZATION:
+            try:
+                return OrganizationSubtype(subtype_raw)
+            except ValueError as exc:
+                msg = f"Unknown organization subtype: {subtype_raw}."
+                raise EntityValidationError(msg) from exc
+        case _:
+            msg = "Subtype is only allowed for place and organization source records."
+            raise EntityValidationError(msg)

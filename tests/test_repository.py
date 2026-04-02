@@ -5,7 +5,15 @@ from unittest.mock import patch
 
 import pytest
 
-from onomasticon.core.entities import AnyEntity, Person, Work
+from onomasticon.core.entities import (
+    AnyEntity,
+    Organization,
+    OrganizationSubtype,
+    Person,
+    Place,
+    PlaceSubtype,
+    Work,
+)
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.properties import StatementProperty
 from onomasticon.core.repository import (
@@ -20,6 +28,8 @@ from onomasticon.core.statements import (
     DateValue,
     EntityValue,
     Reference,
+    Sex,
+    SexValue,
     Statement,
     StatementStatus,
 )
@@ -89,6 +99,18 @@ def test_repository_rejects_invalid_toml_shapes(content: str, message: str) -> N
 
     with pytest.raises(EntityValidationError, match=message):
         repository.loads(content)
+
+
+def test_repository_round_trips_place_and_organization_subtypes() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    place = Place(id="a1b2c3", subtype=PlaceSubtype.COUNTRY)
+    organization = Organization(
+        id="b1c2d3",
+        subtype=OrganizationSubtype.RELIGIOUS_ORDER,
+    )
+
+    assert repository.loads(repository.dumps(place)) == place
+    assert repository.loads(repository.dumps(organization)) == organization
 
 
 def test_repository_round_trips_temporal_values() -> None:
@@ -321,7 +343,7 @@ def test_repository_round_trips_person_relationship_properties() -> None:
             ),
             Statement(
                 property=StatementProperty.SEX,
-                value=EntityValue("d3e4f5"),
+                value=SexValue(Sex.MALE),
             ),
         ),
     )
@@ -332,4 +354,32 @@ def test_repository_round_trips_person_relationship_properties() -> None:
     assert 'property = "nationality"' in serialized
     assert 'property = "religious_order"' in serialized
     assert 'property = "sex"' in serialized
+    assert 'sex = "male"' in serialized
     assert reparsed == entity
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (
+            'id = "a1b2c3"\nentity_type = "place"\nsubtype = "principality"\n',
+            "Unknown place subtype: principality",
+        ),
+        (
+            'id = "a1b2c3"\nentity_type = "person"\nsubtype = "country"\n',
+            "Subtype is not allowed for entity_type person",
+        ),
+        (
+            'id = "a1b2c3"\nentity_type = "person"\n[[statements]]\nproperty = "sex"\nsex = "ambiguous"\n',
+            "Unknown sex value: ambiguous",
+        ),
+    ],
+)
+def test_repository_rejects_invalid_subtypes_and_sex_values(
+    content: str,
+    message: str,
+) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    with pytest.raises(EntityValidationError, match=message):
+        repository.loads(content)

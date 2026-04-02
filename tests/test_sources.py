@@ -4,7 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from onomasticon.core.entities import EntityType
+from onomasticon.core.entities import (
+    EntityType,
+    OrganizationSubtype,
+    PlaceSubtype,
+)
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.properties import StatementProperty
 from onomasticon.core.repository import EntityValidationError, EntityWriteError
@@ -13,6 +17,8 @@ from onomasticon.core.statements import (
     DateValue,
     IdentifierValue,
     Reference,
+    Sex,
+    SexValue,
     Statement,
     StatementStatus,
     TextValue,
@@ -57,6 +63,27 @@ def test_source_layout_uses_source_and_record_identifier() -> None:
 
     assert layout.source_record_path("wikidata", "Q12345") == Path(
         "/repo/sources/wikidata/Q12345.toml"
+    )
+
+
+def test_source_repository_round_trips_subtyped_records() -> None:
+    repository = SourceRecordRepository(layout=SourceLayout(root=Path("/repo")))
+    place_record = SourceRecord(
+        source="wikidata",
+        record_id="Q145",
+        entity_type=EntityType.PLACE,
+        subtype=PlaceSubtype.COUNTRY,
+    )
+    organization_record = SourceRecord(
+        source="wikidata",
+        record_id="Q123",
+        entity_type=EntityType.ORGANIZATION,
+        subtype=OrganizationSubtype.RELIGIOUS_ORDER,
+    )
+
+    assert repository.loads(repository.dumps(place_record)) == place_record
+    assert (
+        repository.loads(repository.dumps(organization_record)) == organization_record
     )
 
 
@@ -190,3 +217,21 @@ def test_source_record_rejects_properties_not_allowed_on_entity_type() -> None:
                 ),
             ),
         )
+
+
+def test_source_record_accepts_controlled_sex_value() -> None:
+    record = SourceRecord(
+        source="wikidata",
+        record_id="Q12345",
+        entity_type=EntityType.PERSON,
+        statements=(
+            Statement(
+                property=StatementProperty.SEX,
+                value=SexValue(Sex.FEMALE),
+            ),
+        ),
+    )
+
+    value = record.statements[0].value
+    assert isinstance(value, SexValue)
+    assert value.sex is Sex.FEMALE

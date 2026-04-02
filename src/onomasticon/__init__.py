@@ -1,12 +1,25 @@
 """Onomasticon application package."""
 
 from onomasticon.app import OnomasticonApp
-from onomasticon.core.entities import AnyEntity, Entity, EntityType, Organization
+from onomasticon.core.entities import (
+    AnyEntity,
+    Entity,
+    EntityType,
+    Organization,
+    OrganizationSubtype,
+    PlaceSubtype,
+)
 from onomasticon.core.properties import (
     StatementProperty,
     property_allowed_for_entity_type,
 )
-from onomasticon.core.statements import Certainty, Reference, Statement, StatementStatus
+from onomasticon.core.statements import (
+    Certainty,
+    Reference,
+    Sex,
+    Statement,
+    StatementStatus,
+)
 from onomasticon.core.temporal import TemporalValue
 from onomasticon.core.repository import (
     EntityRepository,
@@ -28,9 +41,12 @@ __all__ = [
     "IdentifierCollisionError",
     "OnomasticonApp",
     "Organization",
+    "OrganizationSubtype",
+    "PlaceSubtype",
     "Reference",
     "RepositoryError",
     "RepositoryLayout",
+    "Sex",
     "Statement",
     "StatementProperty",
     "StatementStatus",

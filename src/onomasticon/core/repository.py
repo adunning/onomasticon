@@ -15,8 +15,10 @@ from onomasticon.core.entities import (
     Item,
     Manifestation,
     Organization,
+    OrganizationSubtype,
     Person,
     Place,
+    PlaceSubtype,
     Work,
 )
 from onomasticon.core.identifiers import Identifier
@@ -29,6 +31,7 @@ from onomasticon.core.statements import (
     IdentifierValue,
     LanguageTagValue,
     Reference,
+    SexValue,
     Statement,
     StatementStatus,
     TextValue,
@@ -101,6 +104,9 @@ class EntityRepository:
         entity_type = _entity_type_for(entity)
         if entity_type is not None:
             lines.append(f"entity_type = {_quote_string(entity_type.value)}")
+        subtype = getattr(entity, "subtype", None)
+        if subtype is not None:
+            lines.append(f"subtype = {_quote_string(subtype.value)}")
         if entity.redirect is not None:
             lines.append(f"redirect = {_quote_string(entity.redirect)}")
         if entity.note is not None:
@@ -167,6 +173,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
     allowed_keys = {
         "id",
         "entity_type",
+        "subtype",
         "identifiers",
         "statements",
         "redirect",
@@ -180,6 +187,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
 
     entity_id = _require_string(data, "id")
     entity_type_raw = _optional_string(data, "entity_type")
+    subtype_raw = _optional_string(data, "subtype")
     identifiers = _parse_identifiers(data.get("identifiers"))
     redirect = _optional_string(data, "redirect")
     note = _optional_string(data, "note")
@@ -200,6 +208,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
         statements=statements,
         redirect=redirect,
         note=note,
+        **_entity_subtype_kwargs(entity_type, subtype_raw),
     )
 
 
@@ -221,6 +230,31 @@ def _entity_class_for(entity_type: EntityType | None) -> type[AnyEntity]:
             return Item
         case None:
             return Entity
+
+
+def _entity_subtype_kwargs(
+    entity_type: EntityType | None,
+    subtype_raw: str | None,
+) -> dict[str, object]:
+    if subtype_raw is None:
+        return {}
+    match entity_type:
+        case EntityType.PLACE:
+            try:
+                return {"subtype": PlaceSubtype(subtype_raw)}
+            except ValueError as exc:
+                msg = f"Unknown place subtype: {subtype_raw}."
+                raise EntityValidationError(msg) from exc
+        case EntityType.ORGANIZATION:
+            try:
+                return {"subtype": OrganizationSubtype(subtype_raw)}
+            except ValueError as exc:
+                msg = f"Unknown organization subtype: {subtype_raw}."
+                raise EntityValidationError(msg) from exc
+        case _:
+            label = entity_type.value if entity_type is not None else "none"
+            msg = f"Subtype is not allowed for entity_type {label}."
+            raise EntityValidationError(msg)
 
 
 def _parse_identifiers(raw: object) -> tuple[Identifier, ...]:
@@ -261,6 +295,7 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         "text",
         "lang",
         "date",
+        "sex",
         "refs",
         "status",
         "certainty",
@@ -272,7 +307,9 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         msg = f"Unexpected statement fields: {extras}."
         raise EntityValidationError(msg)
     value_keys = [
-        key for key in ("entity", "identifier", "text", "lang", "date") if key in data
+        key
+        for key in ("entity", "identifier", "text", "lang", "date", "sex")
+        if key in data
     ]
     if len(value_keys) != 1:
         msg = "Each statement must define exactly one value field."
@@ -297,6 +334,11 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
             value = LanguageTagValue(_require_raw_string(raw_value, field_name="lang"))
         case "date":
             value = DateValue(_parse_temporal_value(raw_value))
+        case "sex":
+            try:
+                value = SexValue(_require_raw_string(raw_value, field_name="sex"))
+            except ValueError as exc:
+                raise EntityValidationError(str(exc)) from exc
         case _:
             raise AssertionError(value_key)
     return Statement(
@@ -349,6 +391,8 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
                 lines.append(f"lang = {_quote_string(language_tag)}")
             case DateValue(temporal=temporal):
                 lines.append(f"date = {_dump_temporal_value(temporal)}")
+            case SexValue(sex=sex):
+                lines.append(f"sex = {_quote_string(sex.value)}")
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
         if statement.status is not StatementStatus.ACCEPTED:

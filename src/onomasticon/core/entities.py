@@ -23,6 +23,18 @@ class EntityType(StrEnum):
     ITEM = "item"
 
 
+class PlaceSubtype(StrEnum):
+    """Controlled place subtypes."""
+
+    COUNTRY = "country"
+
+
+class OrganizationSubtype(StrEnum):
+    """Controlled organization subtypes."""
+
+    RELIGIOUS_ORDER = "religious_order"
+
+
 @dataclass(slots=True, frozen=True)
 class Entity:
     """Minimal canonical entity.
@@ -75,10 +87,14 @@ class Person(Entity):
 class Place(Entity):
     """Place entity."""
 
+    subtype: PlaceSubtype | None = None
+
 
 @dataclass(slots=True, frozen=True)
 class Organization(Entity):
     """Organization entity."""
+
+    subtype: OrganizationSubtype | None = None
 
 
 @dataclass(slots=True, frozen=True)
