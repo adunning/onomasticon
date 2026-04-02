@@ -21,6 +21,7 @@ from onomasticon.core.entities import (
 )
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import LOCAL_IDENTIFIER_LENGTH
+from onomasticon.core.properties import StatementProperty
 from onomasticon.core.statements import (
     Certainty,
     DateValue,
@@ -299,7 +300,7 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         case _:
             raise AssertionError(value_key)
     return Statement(
-        property=_require_string(data, "property"),
+        property=_parse_statement_property(data.get("property")),
         value=value,
         references=_parse_references(data.get("refs")),
         status=_parse_statement_status(data.get("status")),
@@ -407,6 +408,14 @@ def _parse_statement_status(raw: object) -> StatementStatus:
         return StatementStatus(_require_raw_string(raw, field_name="status"))
     except ValueError as exc:
         msg = f"Unknown statement status: {raw}."
+        raise EntityValidationError(msg) from exc
+
+
+def _parse_statement_property(raw: object) -> StatementProperty:
+    try:
+        return StatementProperty(_require_raw_string(raw, field_name="property"))
+    except ValueError as exc:
+        msg = f"Unknown statement property: {raw}."
         raise EntityValidationError(msg) from exc
 
 

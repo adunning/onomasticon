@@ -17,6 +17,10 @@ from onomasticon.core.local_ids import (
     LOCAL_IDENTIFIER_LENGTH,
     validate_local_identifier,
 )
+from onomasticon.core.properties import (
+    StatementProperty,
+    property_allowed_for_entity_type,
+)
 from onomasticon.core.repository import EntityRepository, RepositoryLayout
 from onomasticon.core.repository import (
     EntityValidationError,
@@ -63,10 +67,12 @@ __all__ = [
     "RepositoryError",
     "RepositoryLayout",
     "Statement",
+    "StatementProperty",
     "StatementStatus",
     "StatementValue",
     "TemporalValue",
     "TextValue",
     "Work",
+    "property_allowed_for_entity_type",
     "validate_local_identifier",
 ]

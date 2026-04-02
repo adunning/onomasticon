@@ -5,8 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from onomasticon.core.entities import AnyEntity, Person
+from onomasticon.core.entities import AnyEntity, Person, Work
 from onomasticon.core.identifiers import Identifier
+from onomasticon.core.properties import StatementProperty
 from onomasticon.core.repository import (
     EntityRepository,
     EntityValidationError,
@@ -27,12 +28,12 @@ from onomasticon.core.temporal import TemporalValue
 
 def test_entity_round_trips_through_toml() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
-    entity = Person(
+    entity = Work(
         id="a1b2c3",
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
-                property="creator",
+                property=StatementProperty.CREATOR,
                 value=EntityValue("p9x2k4"),
                 references=(
                     Reference(source="wikidata", record="Q12345", locator="P50"),
@@ -47,7 +48,7 @@ def test_entity_round_trips_through_toml() -> None:
     reparsed = repository.loads(serialized)
 
     assert reparsed == entity
-    assert isinstance(reparsed, Person)
+    assert isinstance(reparsed, Work)
 
 
 def test_repository_layout_uses_one_entity_per_file() -> None:
@@ -92,11 +93,11 @@ def test_repository_rejects_invalid_toml_shapes(content: str, message: str) -> N
 
 def test_repository_round_trips_temporal_values() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
-    entity = Person(
+    entity = Work(
         id="a1b2c3",
         statements=(
             Statement(
-                property="composition",
+                property=StatementProperty.COMPOSITION,
                 value=DateValue(TemporalValue("2024~", label="circa 2024")),
                 status=StatementStatus.ATTESTED_ONLY,
                 certainty=Certainty.MEDIUM,
@@ -119,7 +120,7 @@ def test_repository_round_trips_temporal_intervals() -> None:
         id="a1b2c3",
         statements=(
             Statement(
-                property="floruit",
+                property=StatementProperty.FLORUIT,
                 value=DateValue(TemporalValue("123X/1245")),
             ),
         ),
@@ -203,12 +204,12 @@ def test_repository_dump_can_overwrite_explicitly(tmp_path: Path) -> None:
 
 def test_repository_can_write_and_reload_entity_file(tmp_path: Path) -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
-    entity = Person(
+    entity = Work(
         id="a1b2c3",
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
-                property="creator",
+                property=StatementProperty.CREATOR,
                 value=EntityValue("p9x2k4"),
                 references=(Reference(source="wikidata", record="Q12345"),),
             ),
@@ -280,3 +281,26 @@ def test_repository_rejects_unknown_statement_status_and_certainty(
 
     with pytest.raises(EntityValidationError, match=message):
         repository.loads(content)
+
+
+def test_repository_rejects_unknown_statement_properties() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    with pytest.raises(
+        EntityValidationError, match="Unknown statement property: unknown"
+    ):
+        repository.loads(
+            'id = "a1b2c3"\n[[statements]]\nproperty = "unknown"\ntext = "x"\n'
+        )
+
+
+def test_repository_rejects_properties_not_allowed_on_entity_type() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    with pytest.raises(
+        ValueError,
+        match="Property 'inception' is not allowed on person entities",
+    ):
+        repository.loads(
+            'id = "a1b2c3"\nentity_type = "person"\n[[statements]]\nproperty = "inception"\ndate = "1245"\n'
+        )

@@ -7,6 +7,7 @@ from enum import StrEnum
 
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import validate_local_identifier
+from onomasticon.core.properties import property_allowed_for_entity_type
 from onomasticon.core.statements import Statement
 
 
@@ -44,6 +45,20 @@ class Entity:
             if self.redirect == self.id:
                 msg = "An entity cannot redirect to itself."
                 raise ValueError(msg)
+        entity_type = _entity_type_for_instance(self)
+        if entity_type is not None:
+            for statement in self.statements:
+                if not property_allowed_for_entity_type(
+                    statement.property, entity_type
+                ):
+                    property_name = getattr(
+                        statement.property, "value", statement.property
+                    )
+                    msg = (
+                        f"Property {property_name!r} is not allowed on "
+                        f"{entity_type.value} entities."
+                    )
+                    raise ValueError(msg)
 
     @property
     def is_redirect(self) -> bool:
@@ -89,3 +104,23 @@ class Item(Entity):
 type AnyEntity = (
     Entity | Person | Place | Organization | Work | Expression | Manifestation | Item
 )
+
+
+def _entity_type_for_instance(entity: AnyEntity) -> EntityType | None:
+    match entity:
+        case Person():
+            return EntityType.PERSON
+        case Place():
+            return EntityType.PLACE
+        case Organization():
+            return EntityType.ORGANIZATION
+        case Work():
+            return EntityType.WORK
+        case Expression():
+            return EntityType.EXPRESSION
+        case Manifestation():
+            return EntityType.MANIFESTATION
+        case Item():
+            return EntityType.ITEM
+        case Entity():
+            return None

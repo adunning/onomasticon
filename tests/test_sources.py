@@ -6,6 +6,7 @@ import pytest
 
 from onomasticon.core.entities import EntityType
 from onomasticon.core.identifiers import Identifier
+from onomasticon.core.properties import StatementProperty
 from onomasticon.core.repository import EntityValidationError, EntityWriteError
 from onomasticon.core.statements import (
     Certainty,
@@ -29,7 +30,7 @@ def test_source_record_round_trips_through_toml() -> None:
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
-                property="title",
+                property=StatementProperty.TITLE,
                 value=TextValue("De tribulatione"),
                 references=(
                     Reference(source="wikidata", record="Q12345", locator="P1476"),
@@ -37,7 +38,7 @@ def test_source_record_round_trips_through_toml() -> None:
                 certainty=Certainty.HIGH,
             ),
             Statement(
-                property="same_as",
+                property=StatementProperty.SAME_AS,
                 value=IdentifierValue(Identifier("wikidata", "Q12345")),
                 status=StatementStatus.ATTESTED_ONLY,
             ),
@@ -68,7 +69,7 @@ def test_source_repository_can_write_and_reload_source_record(tmp_path: Path) ->
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
-                property="title",
+                property=StatementProperty.TITLE,
                 value=TextValue("De tribulatione"),
                 references=(Reference(source="wikidata", record="Q12345"),),
             ),
@@ -89,7 +90,7 @@ def test_source_repository_omits_redundant_record_identifier_in_references() -> 
         record_id="Q12345",
         statements=(
             Statement(
-                property="title",
+                property=StatementProperty.TITLE,
                 value=TextValue("De tribulatione"),
                 references=(
                     Reference(source="wikidata", record="Q12345", locator="P1476"),
@@ -112,7 +113,7 @@ def test_source_repository_round_trips_temporal_value_tables() -> None:
         record_id="Q12345",
         statements=(
             Statement(
-                property="inception",
+                property=StatementProperty.INCEPTION,
                 value=DateValue(TemporalValue("2024", label="year only")),
             ),
         ),
@@ -132,7 +133,7 @@ def test_source_repository_round_trips_temporal_intervals() -> None:
         record_id="Q12345",
         statements=(
             Statement(
-                property="floruit",
+                property=StatementProperty.FLORUIT,
                 value=DateValue(TemporalValue("123X/1245")),
             ),
         ),
@@ -171,3 +172,21 @@ def test_source_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> 
         EntityWriteError, match="must be written to a file named Q12345.toml"
     ):
         repository.dump(record, path=tmp_path / "sources" / "wikidata" / "wrong.toml")
+
+
+def test_source_record_rejects_properties_not_allowed_on_entity_type() -> None:
+    with pytest.raises(
+        ValueError,
+        match="Property 'birth' is not allowed on work source records",
+    ):
+        SourceRecord(
+            source="wikidata",
+            record_id="Q12345",
+            entity_type=EntityType.WORK,
+            statements=(
+                Statement(
+                    property=StatementProperty.BIRTH,
+                    value=DateValue(TemporalValue("1245")),
+                ),
+            ),
+        )

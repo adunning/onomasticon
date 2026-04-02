@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from onomasticon.core.entities import EntityType
 from onomasticon.core.identifiers import Identifier
+from onomasticon.core.properties import property_allowed_for_entity_type
 from onomasticon.core.statements import Statement
 from onomasticon.core.validation import require_non_empty_string
 
@@ -24,3 +25,17 @@ class SourceRecord:
     def __post_init__(self) -> None:
         require_non_empty_string(self.source, field_name="source")
         require_non_empty_string(self.record_id, field_name="record_id")
+        if self.entity_type is not None:
+            for statement in self.statements:
+                if not property_allowed_for_entity_type(
+                    statement.property,
+                    self.entity_type,
+                ):
+                    property_name = getattr(
+                        statement.property, "value", statement.property
+                    )
+                    msg = (
+                        f"Property {property_name!r} is not allowed on "
+                        f"{self.entity_type.value} source records."
+                    )
+                    raise ValueError(msg)

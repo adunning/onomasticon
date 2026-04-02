@@ -9,6 +9,7 @@ from langcodes import Language
 
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import validate_local_identifier
+from onomasticon.core.properties import StatementProperty
 from onomasticon.core.temporal import TemporalValue
 from onomasticon.core.validation import require_non_empty_string
 
@@ -115,7 +116,7 @@ class Certainty(StrEnum):
 class Statement:
     """One normalized scholarly statement."""
 
-    property: str
+    property: StatementProperty | str
     value: StatementValue
     references: tuple[Reference, ...] = field(default_factory=tuple)
     status: StatementStatus = StatementStatus.ACCEPTED
@@ -123,4 +124,10 @@ class Statement:
     note: str | None = None
 
     def __post_init__(self) -> None:
-        require_non_empty_string(self.property, field_name="property")
+        property_value = require_non_empty_string(self.property, field_name="property")
+        try:
+            normalized = StatementProperty(property_value)
+        except ValueError as exc:
+            msg = f"Unknown statement property: {property_value}."
+            raise ValueError(msg) from exc
+        object.__setattr__(self, "property", normalized)

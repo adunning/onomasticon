@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from onomasticon.core.identifiers import Identifier
+from onomasticon.core.properties import StatementProperty
 from onomasticon.core.statements import (
     Certainty,
     DateValue,
@@ -20,7 +21,7 @@ from onomasticon.core.temporal import TemporalValue
 
 def test_statement_can_carry_reference_and_entity_value() -> None:
     statement = Statement(
-        property="creator",
+        property=StatementProperty.CREATOR,
         value=EntityValue("p9x2k4"),
         references=(Reference(source="wikidata", record="Q12345", locator="P50"),),
         status=StatementStatus.ACCEPTED,
@@ -36,16 +37,22 @@ def test_statement_can_carry_reference_and_entity_value() -> None:
 
 
 @pytest.mark.parametrize(
-    "value",
+    ("property_name", "value"),
     [
-        TextValue("De tribulatione"),
-        LanguageTagValue("la"),
-        DateValue(TemporalValue("2024")),
-        IdentifierValue(Identifier("wikidata", "Q12345")),
+        (StatementProperty.TITLE, TextValue("De tribulatione")),
+        (StatementProperty.LANGUAGE, LanguageTagValue("la")),
+        (StatementProperty.BIRTH, DateValue(TemporalValue("2024"))),
+        (
+            StatementProperty.SAME_AS,
+            IdentifierValue(Identifier("wikidata", "Q12345")),
+        ),
     ],
 )
-def test_statement_accepts_multiple_value_kinds(value: StatementValue) -> None:
-    statement = Statement(property="example", value=value)
+def test_statement_accepts_multiple_value_kinds(
+    property_name: StatementProperty,
+    value: StatementValue,
+) -> None:
+    statement = Statement(property=property_name, value=value)
 
     assert statement.value == value
 
@@ -113,7 +120,24 @@ def test_temporal_value_rejects_invalid_edtf(edtf: str) -> None:
 
 
 def test_statement_defaults_to_accepted_without_certainty() -> None:
-    statement = Statement(property="birth", value=DateValue(TemporalValue("1245")))
+    statement = Statement(
+        property=StatementProperty.BIRTH,
+        value=DateValue(TemporalValue("1245")),
+    )
 
     assert statement.status is StatementStatus.ACCEPTED
     assert statement.certainty is None
+
+
+def test_statement_normalizes_string_properties_to_controlled_values() -> None:
+    statement = Statement(
+        property="creator",
+        value=EntityValue("p9x2k4"),
+    )
+
+    assert statement.property is StatementProperty.CREATOR
+
+
+def test_statement_rejects_unknown_properties() -> None:
+    with pytest.raises(ValueError, match="Unknown statement property: unknown"):
+        Statement(property="unknown", value=TextValue("x"))

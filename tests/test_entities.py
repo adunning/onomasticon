@@ -4,7 +4,10 @@ from dataclasses import is_dataclass
 
 import pytest
 
-from onomasticon.core.entities import Entity, Organization
+from onomasticon.core.entities import Entity, Organization, Person
+from onomasticon.core.properties import StatementProperty
+from onomasticon.core.statements import DateValue, Statement
+from onomasticon.core.temporal import TemporalValue
 
 
 def test_entity_requires_only_an_id() -> None:
@@ -44,3 +47,16 @@ def test_organization_is_a_first_class_entity() -> None:
     entity = Organization(id="a1b2c3")
 
     assert isinstance(entity, Organization)
+
+
+def test_person_rejects_inapplicable_statement_properties() -> None:
+    with pytest.raises(ValueError, match="not allowed on person entities"):
+        Person(
+            id="a1b2c3",
+            statements=(
+                Statement(
+                    property=StatementProperty.INCEPTION,
+                    value=DateValue(TemporalValue("1245")),
+                ),
+            ),
+        )
