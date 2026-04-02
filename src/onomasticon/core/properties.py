@@ -11,7 +11,6 @@ class StatementProperty(StrEnum):
     ATTESTED = "attested"
     AUTHOR = "author"
     BIRTH = "birth"
-    CREATOR = "creator"
     DEATH = "death"
     FLORUIT = "floruit"
     INCEPTION = "inception"
@@ -30,14 +29,6 @@ _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
     ),
     StatementProperty.AUTHOR: frozenset({"work", "expression"}),
     StatementProperty.BIRTH: frozenset({"person"}),
-    StatementProperty.CREATOR: frozenset(
-        {
-            "work",
-            "expression",
-            "manifestation",
-            "item",
-        }
-    ),
     StatementProperty.DEATH: frozenset({"person"}),
     StatementProperty.FLORUIT: frozenset({"person"}),
     StatementProperty.INCEPTION: frozenset({"organization", "place", "manifestation"}),
@@ -67,6 +58,13 @@ _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
     StatementProperty.TRANSLATOR: frozenset({"expression", "manifestation"}),
 }
 
+_ENTITY_REFERENCE_TARGETS: dict[StatementProperty, frozenset[str]] = {
+    StatementProperty.AUTHOR: frozenset({"person"}),
+    StatementProperty.NATIONALITY: frozenset({"country"}),
+    StatementProperty.RELIGIOUS_ORDER: frozenset({"religious_order"}),
+    StatementProperty.TRANSLATOR: frozenset({"person"}),
+}
+
 
 def property_allowed_for_entity_type(
     property_name: StatementProperty | str,
@@ -94,3 +92,17 @@ def _canonical_entity_type_name(entity_type_name: str) -> str:
             return "organization"
         case _:
             return entity_type_name
+
+
+def allowed_target_entity_types(
+    property_name: StatementProperty | str,
+) -> frozenset[str] | None:
+    """Return constrained target entity types for entity-valued statements."""
+    property_value = getattr(property_name, "value", property_name)
+    if not isinstance(property_value, str):
+        return None
+    try:
+        normalized_property = StatementProperty(property_value)
+    except ValueError:
+        return None
+    return _ENTITY_REFERENCE_TARGETS.get(normalized_property)

@@ -193,7 +193,7 @@ def test_source_repository_rejects_bad_statement_shapes() -> None:
 
     with pytest.raises(EntityValidationError, match="exactly one value field"):
         repository.loads(
-            'source = "wikidata"\nrecord_id = "Q12345"\n[[statements]]\nproperty = "creator"\ntext = "A"\nlang = "la"\n'
+            'source = "wikidata"\nrecord_id = "Q12345"\n[[statements]]\nproperty = "author"\ntext = "A"\nlang = "la"\n'
         )
 
 

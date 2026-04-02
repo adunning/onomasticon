@@ -21,14 +21,14 @@ from onomasticon.core.temporal import TemporalValue
 
 def test_statement_can_carry_reference_and_entity_value() -> None:
     statement = Statement(
-        property=StatementProperty.CREATOR,
+        property=StatementProperty.AUTHOR,
         value=EntityValue("p9x2k4"),
         references=(Reference(source="wikidata", record="Q12345", locator="P50"),),
         status=StatementStatus.ACCEPTED,
         certainty=Certainty.HIGH,
     )
 
-    assert statement.property == "creator"
+    assert statement.property == "author"
     assert statement.references[0].source == "wikidata"
     assert statement.references[0].record == "Q12345"
     assert statement.references[0].locator == "P50"
@@ -131,11 +131,11 @@ def test_statement_defaults_to_accepted_without_certainty() -> None:
 
 def test_statement_normalizes_string_properties_to_controlled_values() -> None:
     statement = Statement(
-        property="creator",
+        property="author",
         value=EntityValue("p9x2k4"),
     )
 
-    assert statement.property is StatementProperty.CREATOR
+    assert statement.property is StatementProperty.AUTHOR
 
 
 def test_statement_rejects_unknown_properties() -> None:

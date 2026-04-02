@@ -13,6 +13,7 @@ from onomasticon.core.appellations import (
 )
 from onomasticon.core.entities import (
     AnyEntity,
+    Expression,
     Organization,
     OrganizationSubtype,
     Person,
@@ -56,7 +57,7 @@ def test_entity_round_trips_through_toml() -> None:
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
-                property=StatementProperty.CREATOR,
+                property=StatementProperty.AUTHOR,
                 value=EntityValue("p9x2k4"),
                 references=(
                     Reference(source="wikidata", record="Q12345", locator="P50"),
@@ -310,14 +311,20 @@ def test_repository_dump_can_overwrite_explicitly(tmp_path: Path) -> None:
 
 def test_repository_can_write_and_reload_entity_file(tmp_path: Path) -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Person(id="p9x2k4"))
+    repository.dump(Person(id="q9x2k4"))
     entity = Work(
         id="a1b2c3",
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
-                property=StatementProperty.CREATOR,
+                property=StatementProperty.AUTHOR,
                 value=EntityValue("p9x2k4"),
                 references=(Reference(source="wikidata", record="Q12345"),),
+            ),
+            Statement(
+                property=StatementProperty.AUTHOR,
+                value=EntityValue("q9x2k4"),
             ),
         ),
     )
@@ -327,6 +334,191 @@ def test_repository_can_write_and_reload_entity_file(tmp_path: Path) -> None:
 
     assert written_path == tmp_path / "entities" / "a1b2c3.toml"
     assert loaded == entity
+
+
+def test_repository_validates_cross_entity_targets_on_dump(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Place(id="b1c2d3"))
+
+    entity = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.NATIONALITY,
+                value=EntityValue("b1c2d3"),
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        EntityValidationError,
+        match=r"Property 'nationality' on entity a1b2c3 must point to one of \[country\], not 'place'",
+    ):
+        repository.dump(entity)
+
+
+def test_repository_validates_cross_entity_targets_on_load(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Organization(id="b1c2d3"))
+    person_path = tmp_path / "entities" / "a1b2c3.toml"
+    person_path.parent.mkdir(parents=True, exist_ok=True)
+    person_path.write_text(
+        "\n".join(
+            [
+                'id = "a1b2c3"',
+                'type = "person"',
+                "[[statements]]",
+                'property = "religious_order"',
+                'entity = "b1c2d3"',
+                "",
+            ]
+        )
+    )
+
+    with pytest.raises(
+        EntityValidationError,
+        match=r"Property 'religious_order' on entity a1b2c3 must point to one of \[religious_order\], not 'organization'",
+    ):
+        repository.load(person_path)
+
+
+def test_repository_rejects_missing_cross_entity_targets(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    entity = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.NATIONALITY,
+                value=EntityValue("b1c2d3"),
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        EntityValidationError,
+        match=r"references missing entity 'b1c2d3' via property 'nationality'",
+    ):
+        repository.dump(entity)
+
+
+def test_repository_accepts_valid_cross_entity_targets(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Place(id="b1c2d3", subtype=PlaceSubtype.COUNTRY))
+    repository.dump(
+        Organization(
+            id="c2d3e4",
+            subtype=OrganizationSubtype.RELIGIOUS_ORDER,
+        )
+    )
+    person = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.NATIONALITY,
+                value=EntityValue("b1c2d3"),
+            ),
+            Statement(
+                property=StatementProperty.RELIGIOUS_ORDER,
+                value=EntityValue("c2d3e4"),
+            ),
+        ),
+    )
+
+    written_path = repository.dump(person)
+
+    assert repository.load(written_path) == person
+
+
+def test_repository_rejects_author_target_that_is_not_a_person(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Organization(id="b1c2d3"))
+    work = Work(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.AUTHOR,
+                value=EntityValue("b1c2d3"),
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        EntityValidationError,
+        match=r"Property 'author' on entity a1b2c3 must point to one of \[person\], not 'organization'",
+    ):
+        repository.dump(work)
+
+
+def test_repository_accepts_author_and_translator_targets_that_are_people(
+    tmp_path: Path,
+) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Person(id="b1c2d3"))
+    repository.dump(Person(id="c2d3e4"))
+    expression = Expression(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.AUTHOR,
+                value=EntityValue("b1c2d3"),
+            ),
+            Statement(
+                property=StatementProperty.TRANSLATOR,
+                value=EntityValue("c2d3e4"),
+            ),
+        ),
+    )
+
+    written_path = repository.dump(expression)
+
+    assert repository.load(written_path) == expression
+
+
+def test_repository_accepts_multiple_author_targets_that_are_people(
+    tmp_path: Path,
+) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Person(id="b1c2d3"))
+    repository.dump(Person(id="c2d3e4"))
+    work = Work(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.AUTHOR,
+                value=EntityValue("b1c2d3"),
+            ),
+            Statement(
+                property=StatementProperty.AUTHOR,
+                value=EntityValue("c2d3e4"),
+            ),
+        ),
+    )
+
+    written_path = repository.dump(work)
+
+    assert repository.load(written_path) == work
+
+
+def test_repository_rejects_translator_target_that_is_not_a_person(
+    tmp_path: Path,
+) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Place(id="b1c2d3"))
+    expression = Expression(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.TRANSLATOR,
+                value=EntityValue("b1c2d3"),
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        EntityValidationError,
+        match=r"Property 'translator' on entity a1b2c3 must point to one of \[person\], not 'place'",
+    ):
+        repository.dump(expression)
 
 
 def test_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> None:

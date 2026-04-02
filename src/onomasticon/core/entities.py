@@ -144,3 +144,14 @@ def _entity_type_for_instance(entity: AnyEntity) -> EntityType | None:
             return EntityType.ITEM
         case Entity():
             return None
+
+
+def entity_type_for_instance(entity: AnyEntity) -> EntityType | None:
+    """Return the persisted entity type implied by one entity instance."""
+    match entity:
+        case Place(subtype=PlaceSubtype.COUNTRY):
+            return EntityType.COUNTRY
+        case Organization(subtype=OrganizationSubtype.RELIGIOUS_ORDER):
+            return EntityType.RELIGIOUS_ORDER
+        case _:
+            return _entity_type_for_instance(entity)

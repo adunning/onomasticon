@@ -21,10 +21,11 @@ from onomasticon.core.entities import (
     Place,
     PlaceSubtype,
     Work,
+    entity_type_for_instance,
 )
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import LOCAL_IDENTIFIER_LENGTH
-from onomasticon.core.properties import StatementProperty
+from onomasticon.core.properties import StatementProperty, allowed_target_entity_types
 from onomasticon.core.statements import (
     Certainty,
     DateValue,
@@ -97,7 +98,9 @@ class EntityRepository:
 
     def load(self, path: Path) -> AnyEntity:
         """Load one entity from a TOML file."""
-        return self.loads(path.read_text())
+        entity = self.loads(path.read_text())
+        self.validate_cross_entity_references(entity)
+        return entity
 
     def dumps(self, entity: AnyEntity) -> str:
         """Serialize one entity to TOML."""
@@ -127,12 +130,53 @@ class EntityRepository:
         if destination.name != expected_name:
             msg = f"Entity {entity.id} must be written to a file named {expected_name}."
             raise EntityWriteError(msg)
+        self.validate_cross_entity_references(entity)
         if destination.exists() and not overwrite:
             msg = f"Refusing to overwrite existing entity file: {destination}."
             raise EntityWriteError(msg)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(self.dumps(entity))
         return destination
+
+    def validate_cross_entity_references(self, entity: AnyEntity) -> None:
+        """Validate repository-level entity references for one entity."""
+        for statement in entity.statements:
+            match statement.value:
+                case EntityValue(entity_id=target_id):
+                    self._validate_entity_reference(
+                        entity, statement.property, target_id
+                    )
+                case _:
+                    continue
+
+    def _validate_entity_reference(
+        self,
+        entity: AnyEntity,
+        property_name: StatementProperty | str,
+        target_id: str,
+    ) -> None:
+        normalized_property = StatementProperty(property_name)
+        target_path = self.layout.entity_path(target_id)
+        if not target_path.exists():
+            msg = (
+                f"Entity {entity.id} references missing entity {target_id!r} "
+                f"via property {normalized_property.value!r}."
+            )
+            raise EntityValidationError(msg)
+        target_entity = self.loads(target_path.read_text())
+        allowed_types = allowed_target_entity_types(normalized_property)
+        if allowed_types is None:
+            return
+        target_type = entity_type_for_instance(target_entity)
+        target_type_value = getattr(target_type, "value", None)
+        if target_type_value not in allowed_types:
+            allowed = ", ".join(sorted(allowed_types))
+            actual = target_type_value or "untyped"
+            msg = (
+                f"Property {normalized_property.value!r} on entity {entity.id} must point "
+                f"to one of [{allowed}], not {actual!r}."
+            )
+            raise EntityValidationError(msg)
 
     def mint_id(self, *, max_attempts: int = DEFAULT_ID_MINT_ATTEMPTS) -> str:
         """Mint a new six-character local identifier with collision checking."""
