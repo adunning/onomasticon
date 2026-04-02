@@ -21,7 +21,9 @@ def build_parser() -> argparse.ArgumentParser:
         "validate",
         help="Validate one entity TOML file.",
     )
-    validate_parser.add_argument("path", type=Path, help="Path to the entity TOML file.")
+    validate_parser.add_argument(
+        "path", type=Path, help="Path to the entity TOML file."
+    )
 
     return parser
 

@@ -74,18 +74,25 @@ def test_repository_loads_return_concrete_entity_types(
 ) -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
 
-    entity: AnyEntity = repository.loads(f'id = "a1b2c3"\nentity_type = "{entity_type}"\n')
+    entity: AnyEntity = repository.loads(
+        f'id = "a1b2c3"\nentity_type = "{entity_type}"\n'
+    )
 
     assert isinstance(entity, expected_class)
 
 
-def test_repository_mints_six_character_ids_and_retries_on_collision(tmp_path: Path) -> None:
+def test_repository_mints_six_character_ids_and_retries_on_collision(
+    tmp_path: Path,
+) -> None:
     layout = RepositoryLayout(root=tmp_path)
     repository = EntityRepository(layout=layout)
     layout.entity_path("aaaaaa").parent.mkdir(parents=True, exist_ok=True)
     layout.entity_path("aaaaaa").write_text('id = "aaaaaa"\n')
 
-    with patch("onomasticon.core.repository.choice", side_effect=["a", "a", "a", "a", "a", "a", "b", "1", "c", "2", "d", "3"]):
+    with patch(
+        "onomasticon.core.repository.choice",
+        side_effect=["a", "a", "a", "a", "a", "a", "b", "1", "c", "2", "d", "3"],
+    ):
         minted = repository.mint_id()
 
     assert minted == "b1c2d3"
@@ -97,7 +104,9 @@ def test_repository_raises_when_id_minting_exhausts_attempts(tmp_path: Path) -> 
     layout.entity_path("aaaaaa").parent.mkdir(parents=True, exist_ok=True)
     layout.entity_path("aaaaaa").write_text('id = "aaaaaa"\n')
 
-    with patch("onomasticon.core.repository.choice", side_effect=["a", "a", "a", "a", "a", "a"]):
+    with patch(
+        "onomasticon.core.repository.choice", side_effect=["a", "a", "a", "a", "a", "a"]
+    ):
         with pytest.raises(IdentifierCollisionError, match="after 1 attempts"):
             repository.mint_id(max_attempts=1)
 
@@ -126,5 +135,7 @@ def test_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
     entity = Person(id="a1b2c3")
 
-    with pytest.raises(EntityWriteError, match="must be written to a file named a1b2c3.toml"):
+    with pytest.raises(
+        EntityWriteError, match="must be written to a file named a1b2c3.toml"
+    ):
         repository.dump(entity, path=tmp_path / "entities" / "wrong.toml")

@@ -82,7 +82,9 @@ class Item(Entity):
     """Item entity."""
 
 
-type AnyEntity = Entity | Person | Place | Organization | Work | Expression | Manifestation | Item
+type AnyEntity = (
+    Entity | Person | Place | Organization | Work | Expression | Manifestation | Item
+)
 
 
 def _validate_identifier(value: str, *, field_name: str) -> None:

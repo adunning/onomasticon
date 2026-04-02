@@ -39,6 +39,7 @@ def test_entity_rejects_invalid_identifiers(
     with pytest.raises(ValueError, match=message):
         Entity(id=entity_id, redirect=redirect)
 
+
 def test_organization_is_a_first_class_entity() -> None:
     entity = Organization(id="a1b2c3")
 

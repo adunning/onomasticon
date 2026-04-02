@@ -78,14 +78,14 @@ class EntityRepository:
 
     def dumps(self, entity: AnyEntity) -> str:
         """Serialize one entity to TOML."""
-        lines = [f'id = {self._quote(entity.id)}']
+        lines = [f"id = {self._quote(entity.id)}"]
         entity_type = _entity_type_for(entity)
         if entity_type is not None:
-            lines.append(f'entity_type = {self._quote(entity_type.value)}')
+            lines.append(f"entity_type = {self._quote(entity_type.value)}")
         if entity.redirect is not None:
-            lines.append(f'redirect = {self._quote(entity.redirect)}')
+            lines.append(f"redirect = {self._quote(entity.redirect)}")
         if entity.note is not None:
-            lines.append(f'note = {self._quote(entity.note)}')
+            lines.append(f"note = {self._quote(entity.note)}")
         return "\n".join(lines) + "\n"
 
     def dump(
@@ -111,10 +111,14 @@ class EntityRepository:
     def mint_id(self, *, max_attempts: int = DEFAULT_ID_MINT_ATTEMPTS) -> str:
         """Mint a new six-character local identifier with collision checking."""
         for _ in range(max_attempts):
-            candidate = "".join(choice(_IDENTIFIER_ALPHABET) for _ in range(LOCAL_IDENTIFIER_LENGTH))
+            candidate = "".join(
+                choice(_IDENTIFIER_ALPHABET) for _ in range(LOCAL_IDENTIFIER_LENGTH)
+            )
             if not self.layout.entity_exists(candidate):
                 return candidate
-        msg = f"Unable to mint a unique entity identifier after {max_attempts} attempts."
+        msg = (
+            f"Unable to mint a unique entity identifier after {max_attempts} attempts."
+        )
         raise IdentifierCollisionError(msg)
 
     @staticmethod
@@ -157,7 +161,9 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
     note = _optional_string(data, "note")
 
     try:
-        entity_type = EntityType(entity_type_raw) if entity_type_raw is not None else None
+        entity_type = (
+            EntityType(entity_type_raw) if entity_type_raw is not None else None
+        )
     except ValueError as exc:
         msg = f"Unknown entity_type: {entity_type_raw}."
         raise EntityValidationError(msg) from exc
