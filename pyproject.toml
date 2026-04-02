@@ -1,14 +1,32 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
 [project]
 name = "onomasticon"
 version = "0.1.0"
-description = "Resolve, model, and render scholarly entities such as persons, places, organizations, and works across digital catalogues, editions, and publishing workflows."
+description = "Git-backed scholarly entity repository with a technology-independent canonical core."
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
-    "lxml>=6.0.2",
+license = "MIT"
+authors = [
+    { name = "Andrew Dunning" },
 ]
+dependencies = []
+
+
+[project.urls]
+Repository = "https://github.com/adunning/onomasticon"
+
+[project.scripts]
+onomasticon = "onomasticon.cli:main"
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-ra"
+testpaths = ["tests"]
