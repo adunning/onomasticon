@@ -97,7 +97,7 @@ def test_repository_round_trips_temporal_values() -> None:
         id="a1b2c3",
         statements=(
             Statement(
-                property=StatementProperty.COMPOSITION,
+                property=StatementProperty.ATTESTED,
                 value=DateValue(TemporalValue("2024~", label="circa 2024")),
                 status=StatementStatus.ATTESTED_ONLY,
                 certainty=Certainty.MEDIUM,

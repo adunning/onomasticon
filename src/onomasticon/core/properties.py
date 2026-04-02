@@ -8,9 +8,9 @@ from enum import StrEnum
 class StatementProperty(StrEnum):
     """Controlled property vocabulary for the current canonical model."""
 
+    ATTESTED = "attested"
     AUTHOR = "author"
     BIRTH = "birth"
-    COMPOSITION = "composition"
     CREATOR = "creator"
     DEATH = "death"
     FLORUIT = "floruit"
@@ -22,9 +22,11 @@ class StatementProperty(StrEnum):
 
 
 _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
+    StatementProperty.ATTESTED: frozenset(
+        {"work", "expression", "manifestation", "item"}
+    ),
     StatementProperty.AUTHOR: frozenset({"work", "expression"}),
     StatementProperty.BIRTH: frozenset({"person"}),
-    StatementProperty.COMPOSITION: frozenset({"work", "expression"}),
     StatementProperty.CREATOR: frozenset(
         {
             "work",
