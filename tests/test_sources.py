@@ -84,8 +84,8 @@ def test_source_repository_round_trips_subtyped_records() -> None:
     place_serialized = repository.dumps(place_record)
     organization_serialized = repository.dumps(organization_record)
 
-    assert 'entity_type = "country"' in place_serialized
-    assert 'entity_type = "religious_order"' in organization_serialized
+    assert 'type = "country"' in place_serialized
+    assert 'type = "religious_order"' in organization_serialized
     assert repository.loads(place_serialized) == place_record
     assert repository.loads(organization_serialized) == organization_record
 
@@ -204,7 +204,7 @@ def test_source_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> 
         repository.dump(record, path=tmp_path / "sources" / "wikidata" / "wrong.toml")
 
 
-def test_source_record_rejects_properties_not_allowed_on_entity_type() -> None:
+def test_source_record_rejects_properties_not_allowed_on_type() -> None:
     with pytest.raises(
         ValueError,
         match="Property 'birth' is not allowed on work source records",

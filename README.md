@@ -32,10 +32,10 @@ Everything else is optional at this stage. In particular, an entity may simply r
 
 ```toml
 id = "a1b2c3"
-entity_type = "person"
+type = "person"
 ```
 
-`entity_type` belongs to the TOML document layer so the repository can reconstruct
+`type` belongs to the TOML document layer so the repository can reconstruct
 the proper domain class. The domain objects themselves do not duplicate that field.
 
 ## Example redirect

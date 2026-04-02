@@ -103,13 +103,7 @@ class EntityRepository:
         lines = [f"id = {_quote_string(entity.id)}"]
         entity_type = _entity_type_for(entity)
         if entity_type is not None:
-            lines.append(f"entity_type = {_quote_string(entity_type.value)}")
-        subtype = getattr(entity, "subtype", None)
-        if subtype is not None and entity_type not in {
-            EntityType.COUNTRY,
-            EntityType.RELIGIOUS_ORDER,
-        }:
-            lines.append(f"subtype = {_quote_string(subtype.value)}")
+            lines.append(f"type = {_quote_string(entity_type.value)}")
         if entity.redirect is not None:
             lines.append(f"redirect = {_quote_string(entity.redirect)}")
         if entity.note is not None:
@@ -179,8 +173,7 @@ def _entity_type_for(entity: AnyEntity) -> EntityType | None:
 def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
     allowed_keys = {
         "id",
-        "entity_type",
-        "subtype",
+        "type",
         "identifiers",
         "statements",
         "redirect",
@@ -193,8 +186,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
         raise EntityValidationError(msg)
 
     entity_id = _require_string(data, "id")
-    entity_type_raw = _optional_string(data, "entity_type")
-    subtype_raw = _optional_string(data, "subtype")
+    entity_type_raw = _optional_string(data, "type")
     identifiers = _parse_identifiers(data.get("identifiers"))
     redirect = _optional_string(data, "redirect")
     note = _optional_string(data, "note")
@@ -205,7 +197,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
             EntityType(entity_type_raw) if entity_type_raw is not None else None
         )
     except ValueError as exc:
-        msg = f"Unknown entity_type: {entity_type_raw}."
+        msg = f"Unknown type: {entity_type_raw}."
         raise EntityValidationError(msg) from exc
 
     entity_class = _entity_class_for(entity_type)
@@ -215,7 +207,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
         statements=statements,
         redirect=redirect,
         note=note,
-        **_entity_subtype_kwargs(entity_type, subtype_raw),
+        **_entity_subtype_kwargs(entity_type),
     )
 
 
@@ -245,43 +237,14 @@ def _entity_class_for(entity_type: EntityType | None) -> type[AnyEntity]:
 
 def _entity_subtype_kwargs(
     entity_type: EntityType | None,
-    subtype_raw: str | None,
 ) -> dict[str, object]:
-    if subtype_raw is None:
-        match entity_type:
-            case EntityType.COUNTRY:
-                return {"subtype": PlaceSubtype.COUNTRY}
-            case EntityType.RELIGIOUS_ORDER:
-                return {"subtype": OrganizationSubtype.RELIGIOUS_ORDER}
-            case _:
-                return {}
     match entity_type:
         case EntityType.COUNTRY:
-            if subtype_raw != PlaceSubtype.COUNTRY.value:
-                msg = "Subtype must not conflict with entity_type country."
-                raise EntityValidationError(msg)
             return {"subtype": PlaceSubtype.COUNTRY}
-        case EntityType.PLACE:
-            try:
-                return {"subtype": PlaceSubtype(subtype_raw)}
-            except ValueError as exc:
-                msg = f"Unknown place subtype: {subtype_raw}."
-                raise EntityValidationError(msg) from exc
         case EntityType.RELIGIOUS_ORDER:
-            if subtype_raw != OrganizationSubtype.RELIGIOUS_ORDER.value:
-                msg = "Subtype must not conflict with entity_type religious_order."
-                raise EntityValidationError(msg)
             return {"subtype": OrganizationSubtype.RELIGIOUS_ORDER}
-        case EntityType.ORGANIZATION:
-            try:
-                return {"subtype": OrganizationSubtype(subtype_raw)}
-            except ValueError as exc:
-                msg = f"Unknown organization subtype: {subtype_raw}."
-                raise EntityValidationError(msg) from exc
         case _:
-            label = entity_type.value if entity_type is not None else "none"
-            msg = f"Subtype is not allowed for entity_type {label}."
-            raise EntityValidationError(msg)
+            return {}
 
 
 def _parse_identifiers(raw: object) -> tuple[Identifier, ...]:

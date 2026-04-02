@@ -72,12 +72,7 @@ class SourceRecordRepository:
             f"record_id = {_quote_string(record.record_id)}",
         ]
         if record.entity_type is not None:
-            lines.append(f"entity_type = {_quote_string(record.entity_type.value)}")
-        if record.subtype is not None and record.entity_type not in {
-            EntityType.COUNTRY,
-            EntityType.RELIGIOUS_ORDER,
-        }:
-            lines.append(f"subtype = {_quote_string(record.subtype.value)}")
+            lines.append(f"type = {_quote_string(record.entity_type.value)}")
         if record.note is not None:
             lines.append(f"note = {_quote_string(record.note)}")
         lines.extend(_dump_identifiers(record.identifiers))
@@ -116,8 +111,7 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
     allowed_keys = {
         "source",
         "record_id",
-        "entity_type",
-        "subtype",
+        "type",
         "identifiers",
         "note",
         "statements",
@@ -127,22 +121,19 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
         extras = ", ".join(sorted(extra_keys))
         msg = f"Unexpected source record fields: {extras}."
         raise EntityValidationError(msg)
-    entity_type_raw = _optional_string(data, "entity_type")
+    entity_type_raw = _optional_string(data, "type")
     try:
         entity_type = (
             EntityType(entity_type_raw) if entity_type_raw is not None else None
         )
     except ValueError as exc:
-        msg = f"Unknown entity_type: {entity_type_raw}."
+        msg = f"Unknown type: {entity_type_raw}."
         raise EntityValidationError(msg) from exc
     return SourceRecord(
         source=_require_string(data, "source"),
         record_id=_require_string(data, "record_id"),
         entity_type=entity_type,
-        subtype=_parse_source_record_subtype(
-            entity_type,
-            _optional_string(data, "subtype"),
-        ),
+        subtype=_parse_source_record_subtype(entity_type),
         identifiers=_parse_identifiers(data.get("identifiers")),
         statements=_parse_source_statements(
             data.get("statements"),
@@ -268,39 +259,11 @@ def _dump_source_reference(
 
 def _parse_source_record_subtype(
     entity_type: EntityType | None,
-    subtype_raw: str | None,
 ) -> PlaceSubtype | OrganizationSubtype | None:
-    if subtype_raw is None:
-        match entity_type:
-            case EntityType.COUNTRY:
-                return PlaceSubtype.COUNTRY
-            case EntityType.RELIGIOUS_ORDER:
-                return OrganizationSubtype.RELIGIOUS_ORDER
-            case _:
-                return None
     match entity_type:
         case EntityType.COUNTRY:
-            if subtype_raw != PlaceSubtype.COUNTRY.value:
-                msg = "Subtype must not conflict with entity_type country."
-                raise EntityValidationError(msg)
             return PlaceSubtype.COUNTRY
-        case EntityType.PLACE:
-            try:
-                return PlaceSubtype(subtype_raw)
-            except ValueError as exc:
-                msg = f"Unknown place subtype: {subtype_raw}."
-                raise EntityValidationError(msg) from exc
         case EntityType.RELIGIOUS_ORDER:
-            if subtype_raw != OrganizationSubtype.RELIGIOUS_ORDER.value:
-                msg = "Subtype must not conflict with entity_type religious_order."
-                raise EntityValidationError(msg)
             return OrganizationSubtype.RELIGIOUS_ORDER
-        case EntityType.ORGANIZATION:
-            try:
-                return OrganizationSubtype(subtype_raw)
-            except ValueError as exc:
-                msg = f"Unknown organization subtype: {subtype_raw}."
-                raise EntityValidationError(msg) from exc
         case _:
-            msg = "Subtype is only allowed for place and organization source records."
-            raise EntityValidationError(msg)
+            return None

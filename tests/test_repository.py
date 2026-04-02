@@ -74,11 +74,11 @@ def test_repository_rejects_invalid_entity_documents() -> None:
         repository.loads('id = "a1b2c3"\nredirect = "a1b2c3"\n')
 
 
-def test_repository_rejects_unknown_entity_types() -> None:
+def test_repository_rejects_unknown_types() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
 
-    with pytest.raises(EntityValidationError, match="Unknown entity_type: foobar"):
-        repository.loads('id = "a1b2c3"\nentity_type = "foobar"\n')
+    with pytest.raises(EntityValidationError, match="Unknown type: foobar"):
+        repository.loads('id = "a1b2c3"\ntype = "foobar"\n')
 
 
 @pytest.mark.parametrize(
@@ -112,8 +112,8 @@ def test_repository_round_trips_place_and_organization_subtypes() -> None:
     place_serialized = repository.dumps(place)
     organization_serialized = repository.dumps(organization)
 
-    assert 'entity_type = "country"' in place_serialized
-    assert 'entity_type = "religious_order"' in organization_serialized
+    assert 'type = "country"' in place_serialized
+    assert 'type = "religious_order"' in organization_serialized
     assert "subtype =" not in place_serialized
     assert "subtype =" not in organization_serialized
     assert repository.loads(place_serialized) == place
@@ -163,20 +163,18 @@ def test_repository_round_trips_temporal_intervals() -> None:
 
 
 @pytest.mark.parametrize(
-    ("entity_type", "expected_class"),
+    ("type", "expected_class"),
     [
         ("person", Person),
     ],
 )
-def test_repository_loads_return_concrete_entity_types(
-    entity_type: str,
+def test_repository_loads_return_concrete_types(
+    type: str,
     expected_class: type[Person],
 ) -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
 
-    entity: AnyEntity = repository.loads(
-        f'id = "a1b2c3"\nentity_type = "{entity_type}"\n'
-    )
+    entity: AnyEntity = repository.loads(f'id = "a1b2c3"\ntype = "{type}"\n')
 
     assert isinstance(entity, expected_class)
 
@@ -323,7 +321,7 @@ def test_repository_rejects_unknown_statement_properties() -> None:
         )
 
 
-def test_repository_rejects_properties_not_allowed_on_entity_type() -> None:
+def test_repository_rejects_properties_not_allowed_on_type() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
 
     with pytest.raises(
@@ -331,7 +329,7 @@ def test_repository_rejects_properties_not_allowed_on_entity_type() -> None:
         match="Property 'inception' is not allowed on person entities",
     ):
         repository.loads(
-            'id = "a1b2c3"\nentity_type = "person"\n[[statements]]\nproperty = "inception"\ndate = "1245"\n'
+            'id = "a1b2c3"\ntype = "person"\n[[statements]]\nproperty = "inception"\ndate = "1245"\n'
         )
 
 
@@ -369,15 +367,15 @@ def test_repository_round_trips_person_relationship_properties() -> None:
     ("content", "message"),
     [
         (
-            'id = "a1b2c3"\nentity_type = "place"\nsubtype = "principality"\n',
-            "Unknown place subtype: principality",
+            'id = "a1b2c3"\ntype = "place"\nsubtype = "principality"\n',
+            "Unexpected entity fields: subtype",
         ),
         (
-            'id = "a1b2c3"\nentity_type = "person"\nsubtype = "country"\n',
-            "Subtype is not allowed for entity_type person",
+            'id = "a1b2c3"\ntype = "person"\nsubtype = "country"\n',
+            "Unexpected entity fields: subtype",
         ),
         (
-            'id = "a1b2c3"\nentity_type = "person"\n[[statements]]\nproperty = "sex"\nsex = "ambiguous"\n',
+            'id = "a1b2c3"\ntype = "person"\n[[statements]]\nproperty = "sex"\nsex = "ambiguous"\n',
             "Unknown sex value: ambiguous",
         ),
     ],
@@ -392,13 +390,11 @@ def test_repository_rejects_invalid_subtypes_and_sex_values(
         repository.loads(content)
 
 
-def test_repository_loads_leaf_entity_types_as_broad_classes_with_subtypes() -> None:
+def test_repository_loads_leaf_types_as_broad_classes_with_subtypes() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
 
-    country = repository.loads('id = "a1b2c3"\nentity_type = "country"\n')
-    religious_order = repository.loads(
-        'id = "b1c2d3"\nentity_type = "religious_order"\n'
-    )
+    country = repository.loads('id = "a1b2c3"\ntype = "country"\n')
+    religious_order = repository.loads('id = "b1c2d3"\ntype = "religious_order"\n')
 
     assert isinstance(country, Place)
     assert country.subtype is PlaceSubtype.COUNTRY
