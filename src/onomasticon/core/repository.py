@@ -185,7 +185,13 @@ def _require_table(raw: object) -> dict[str, object]:
     if not isinstance(raw, dict):
         msg = "Expected a TOML table."
         raise EntityValidationError(msg)
-    return raw
+    table: dict[str, object] = {}
+    for key, value in raw.items():
+        if not isinstance(key, str):
+            msg = "Expected a TOML table with string keys."
+            raise EntityValidationError(msg)
+        table[key] = value
+    return table
 
 
 def _require_string(data: dict[str, object], key: str) -> str:

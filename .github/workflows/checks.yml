@@ -20,6 +20,24 @@ jobs:
 
       - name: Run Ruff
         uses: astral-sh/ruff-action@v3
+        with:
+          args: check .
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Run type check
+        run: uv run ty check
 
   test:
     name: Test
@@ -28,9 +46,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
