@@ -2,6 +2,7 @@
 
 from onomasticon.app import OnomasticonApp
 from onomasticon.core.entities import AnyEntity, Entity, EntityType, Organization
+from onomasticon.core.statements import Reference, Statement
 from onomasticon.core.repository import (
     EntityRepository,
     EntityValidationError,
@@ -21,6 +22,8 @@ __all__ = [
     "IdentifierCollisionError",
     "OnomasticonApp",
     "Organization",
+    "Reference",
     "RepositoryError",
     "RepositoryLayout",
+    "Statement",
 ]

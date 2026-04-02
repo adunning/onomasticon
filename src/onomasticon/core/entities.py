@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
-LOCAL_IDENTIFIER_LENGTH = 6
+from onomasticon.core.local_ids import validate_local_identifier
+from onomasticon.core.statements import Statement
 
 
 class EntityType(StrEnum):
@@ -30,13 +31,14 @@ class Entity:
     """
 
     id: str
+    statements: tuple[Statement, ...] = field(default_factory=tuple)
     redirect: str | None = None
     note: str | None = None
 
     def __post_init__(self) -> None:
-        _validate_identifier(self.id, field_name="id")
+        validate_local_identifier(self.id, field_name="id")
         if self.redirect is not None:
-            _validate_identifier(self.redirect, field_name="redirect")
+            validate_local_identifier(self.redirect, field_name="redirect")
             if self.redirect == self.id:
                 msg = "An entity cannot redirect to itself."
                 raise ValueError(msg)
@@ -85,12 +87,3 @@ class Item(Entity):
 type AnyEntity = (
     Entity | Person | Place | Organization | Work | Expression | Manifestation | Item
 )
-
-
-def _validate_identifier(value: str, *, field_name: str) -> None:
-    if len(value) != LOCAL_IDENTIFIER_LENGTH:
-        msg = f"{field_name} must be exactly {LOCAL_IDENTIFIER_LENGTH} characters long."
-        raise ValueError(msg)
-    if not value.isascii() or not value.isalnum() or value.lower() != value:
-        msg = f"{field_name} must contain only lowercase ASCII letters and digits."
-        raise ValueError(msg)

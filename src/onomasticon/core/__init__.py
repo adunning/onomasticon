@@ -12,6 +12,10 @@ from onomasticon.core.entities import (
     Place,
     Work,
 )
+from onomasticon.core.local_ids import (
+    LOCAL_IDENTIFIER_LENGTH,
+    validate_local_identifier,
+)
 from onomasticon.core.repository import EntityRepository, RepositoryLayout
 from onomasticon.core.repository import (
     EntityValidationError,
@@ -19,22 +23,42 @@ from onomasticon.core.repository import (
     IdentifierCollisionError,
     RepositoryError,
 )
+from onomasticon.core.statements import (
+    DateValue,
+    EntityValue,
+    IdentifierValue,
+    LanguageTagValue,
+    Reference,
+    Statement,
+    StatementValue,
+    TextValue,
+)
 
 __all__ = [
     "AnyEntity",
+    "DateValue",
     "Entity",
     "EntityRepository",
+    "EntityValue",
     "EntityValidationError",
     "EntityWriteError",
     "EntityType",
     "Expression",
+    "IdentifierValue",
     "IdentifierCollisionError",
     "Item",
+    "LanguageTagValue",
+    "LOCAL_IDENTIFIER_LENGTH",
     "Manifestation",
     "Organization",
     "Person",
     "Place",
+    "Reference",
     "RepositoryError",
     "RepositoryLayout",
+    "Statement",
+    "StatementValue",
+    "TextValue",
     "Work",
+    "validate_local_identifier",
 ]

@@ -13,11 +13,24 @@ from onomasticon.core.repository import (
     IdentifierCollisionError,
     RepositoryLayout,
 )
+from onomasticon.core.statements import EntityValue, Reference, Statement
 
 
 def test_entity_round_trips_through_toml() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
-    entity = Person(id="a1b2c3", note="Sparse test entity.")
+    entity = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property="creator",
+                value=EntityValue("p9x2k4"),
+                references=(
+                    Reference(source="wikidata", record="Q12345", locator="P50"),
+                ),
+            ),
+        ),
+        note="Sparse test entity.",
+    )
 
     serialized = repository.dumps(entity)
     reparsed = repository.loads(serialized)
