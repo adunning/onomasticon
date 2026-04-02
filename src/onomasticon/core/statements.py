@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 
 from langcodes import Language
 
@@ -93,6 +94,23 @@ type StatementValue = (
 )
 
 
+class StatementStatus(StrEnum):
+    """Controlled scholarly status for one statement."""
+
+    ACCEPTED = "accepted"
+    DISPUTED = "disputed"
+    REJECTED = "rejected"
+    ATTESTED_ONLY = "attested_only"
+
+
+class Certainty(StrEnum):
+    """Controlled certainty values for one statement."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
 @dataclass(slots=True, frozen=True)
 class Statement:
     """One normalized scholarly statement."""
@@ -100,6 +118,8 @@ class Statement:
     property: str
     value: StatementValue
     references: tuple[Reference, ...] = field(default_factory=tuple)
+    status: StatementStatus = StatementStatus.ACCEPTED
+    certainty: Certainty | None = None
     note: str | None = None
 
     def __post_init__(self) -> None:

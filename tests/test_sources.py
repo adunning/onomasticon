@@ -8,10 +8,12 @@ from onomasticon.core.entities import EntityType
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.repository import EntityValidationError, EntityWriteError
 from onomasticon.core.statements import (
+    Certainty,
     DateValue,
     IdentifierValue,
     Reference,
     Statement,
+    StatementStatus,
     TextValue,
 )
 from onomasticon.core.temporal import TemporalValue
@@ -32,10 +34,12 @@ def test_source_record_round_trips_through_toml() -> None:
                 references=(
                     Reference(source="wikidata", record="Q12345", locator="P1476"),
                 ),
+                certainty=Certainty.HIGH,
             ),
             Statement(
                 property="same_as",
                 value=IdentifierValue(Identifier("wikidata", "Q12345")),
+                status=StatementStatus.ATTESTED_ONLY,
             ),
         ),
         note="Normalized cache record.",

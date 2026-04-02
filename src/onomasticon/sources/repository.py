@@ -26,6 +26,7 @@ from onomasticon.core.statements import (
     LanguageTagValue,
     Reference,
     Statement,
+    StatementStatus,
     TextValue,
 )
 from onomasticon.sources.records import SourceRecord
@@ -155,6 +156,8 @@ def _parse_source_statements(
                 property=statement.property,
                 value=statement.value,
                 references=references,
+                status=statement.status,
+                certainty=statement.certainty,
                 note=statement.note,
             )
         )
@@ -209,6 +212,10 @@ def _dump_source_statements(
                     )
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
+        if statement.status is not StatementStatus.ACCEPTED:
+            lines.append(f"status = {_quote_string(statement.status.value)}")
+        if statement.certainty is not None:
+            lines.append(f"certainty = {_quote_string(statement.certainty.value)}")
         if statement.references:
             refs = ", ".join(
                 _dump_source_reference(

@@ -4,12 +4,14 @@ import pytest
 
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.statements import (
+    Certainty,
     DateValue,
     EntityValue,
     IdentifierValue,
     LanguageTagValue,
     Reference,
     Statement,
+    StatementStatus,
     StatementValue,
     TextValue,
 )
@@ -21,12 +23,16 @@ def test_statement_can_carry_reference_and_entity_value() -> None:
         property="creator",
         value=EntityValue("p9x2k4"),
         references=(Reference(source="wikidata", record="Q12345", locator="P50"),),
+        status=StatementStatus.ACCEPTED,
+        certainty=Certainty.HIGH,
     )
 
     assert statement.property == "creator"
     assert statement.references[0].source == "wikidata"
     assert statement.references[0].record == "Q12345"
     assert statement.references[0].locator == "P50"
+    assert statement.status is StatementStatus.ACCEPTED
+    assert statement.certainty is Certainty.HIGH
 
 
 @pytest.mark.parametrize(
@@ -104,3 +110,10 @@ def test_temporal_value_accepts_supported_edtf_forms(edtf: str) -> None:
 def test_temporal_value_rejects_invalid_edtf(edtf: str) -> None:
     with pytest.raises(ValueError, match="edtf|non-empty string|valid EDTF string"):
         TemporalValue(edtf)
+
+
+def test_statement_defaults_to_accepted_without_certainty() -> None:
+    statement = Statement(property="birth", value=DateValue(TemporalValue("1245")))
+
+    assert statement.status is StatementStatus.ACCEPTED
+    assert statement.certainty is None

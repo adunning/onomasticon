@@ -25,12 +25,14 @@ from onomasticon.core.repository import (
     RepositoryError,
 )
 from onomasticon.core.statements import (
+    Certainty,
     DateValue,
     EntityValue,
     IdentifierValue,
     LanguageTagValue,
     Reference,
     Statement,
+    StatementStatus,
     StatementValue,
     TextValue,
 )
@@ -38,6 +40,7 @@ from onomasticon.core.temporal import TemporalValue
 
 __all__ = [
     "AnyEntity",
+    "Certainty",
     "DateValue",
     "Entity",
     "EntityRepository",
@@ -60,6 +63,7 @@ __all__ = [
     "RepositoryError",
     "RepositoryLayout",
     "Statement",
+    "StatementStatus",
     "StatementValue",
     "TemporalValue",
     "TextValue",

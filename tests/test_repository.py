@@ -14,7 +14,14 @@ from onomasticon.core.repository import (
     IdentifierCollisionError,
     RepositoryLayout,
 )
-from onomasticon.core.statements import DateValue, EntityValue, Reference, Statement
+from onomasticon.core.statements import (
+    Certainty,
+    DateValue,
+    EntityValue,
+    Reference,
+    Statement,
+    StatementStatus,
+)
 from onomasticon.core.temporal import TemporalValue
 
 
@@ -30,6 +37,7 @@ def test_entity_round_trips_through_toml() -> None:
                 references=(
                     Reference(source="wikidata", record="Q12345", locator="P50"),
                 ),
+                certainty=Certainty.HIGH,
             ),
         ),
         note="Sparse test entity.",
@@ -90,6 +98,8 @@ def test_repository_round_trips_temporal_values() -> None:
             Statement(
                 property="composition",
                 value=DateValue(TemporalValue("2024~", label="circa 2024")),
+                status=StatementStatus.ATTESTED_ONLY,
+                certainty=Certainty.MEDIUM,
             ),
         ),
     )
@@ -98,6 +108,8 @@ def test_repository_round_trips_temporal_values() -> None:
     reparsed = repository.loads(serialized)
 
     assert 'date = { edtf = "2024~", label = "circa 2024" }' in serialized
+    assert 'status = "attested_only"' in serialized
+    assert 'certainty = "medium"' in serialized
     assert reparsed == entity
 
 
@@ -238,6 +250,29 @@ def test_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> None:
     ],
 )
 def test_repository_rejects_invalid_temporal_value_shapes(
+    content: str,
+    message: str,
+) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    with pytest.raises(EntityValidationError, match=message):
+        repository.loads(content)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (
+            'id = "a1b2c3"\n[[statements]]\nproperty = "death"\ndate = "1217"\nstatus = "wrong"\n',
+            "Unknown statement status: wrong",
+        ),
+        (
+            'id = "a1b2c3"\n[[statements]]\nproperty = "death"\ndate = "1217"\ncertainty = "probable"\n',
+            "Unknown statement certainty: probable",
+        ),
+    ],
+)
+def test_repository_rejects_unknown_statement_status_and_certainty(
     content: str,
     message: str,
 ) -> None:

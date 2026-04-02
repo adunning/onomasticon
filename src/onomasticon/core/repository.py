@@ -22,12 +22,14 @@ from onomasticon.core.entities import (
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import LOCAL_IDENTIFIER_LENGTH
 from onomasticon.core.statements import (
+    Certainty,
     DateValue,
     EntityValue,
     IdentifierValue,
     LanguageTagValue,
     Reference,
     Statement,
+    StatementStatus,
     TextValue,
 )
 from onomasticon.core.temporal import TemporalValue
@@ -259,6 +261,8 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         "lang",
         "date",
         "refs",
+        "status",
+        "certainty",
         "note",
     }
     extra_keys = set(data) - allowed_keys
@@ -298,6 +302,8 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         property=_require_string(data, "property"),
         value=value,
         references=_parse_references(data.get("refs")),
+        status=_parse_statement_status(data.get("status")),
+        certainty=_parse_certainty(data.get("certainty")),
         note=_optional_string(data, "note"),
     )
 
@@ -344,6 +350,10 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
                 lines.append(f"date = {_dump_temporal_value(temporal)}")
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
+        if statement.status is not StatementStatus.ACCEPTED:
+            lines.append(f"status = {_quote_string(statement.status.value)}")
+        if statement.certainty is not None:
+            lines.append(f"certainty = {_quote_string(statement.certainty.value)}")
         if statement.references:
             refs = ", ".join(
                 _dump_reference(reference) for reference in statement.references
@@ -388,6 +398,26 @@ def _parse_temporal_value(raw: object) -> TemporalValue:
         edtf=_require_string(data, "edtf"),
         label=_optional_string(data, "label"),
     )
+
+
+def _parse_statement_status(raw: object) -> StatementStatus:
+    if raw is None:
+        return StatementStatus.ACCEPTED
+    try:
+        return StatementStatus(_require_raw_string(raw, field_name="status"))
+    except ValueError as exc:
+        msg = f"Unknown statement status: {raw}."
+        raise EntityValidationError(msg) from exc
+
+
+def _parse_certainty(raw: object) -> Certainty | None:
+    if raw is None:
+        return None
+    try:
+        return Certainty(_require_raw_string(raw, field_name="certainty"))
+    except ValueError as exc:
+        msg = f"Unknown statement certainty: {raw}."
+        raise EntityValidationError(msg) from exc
 
 
 def _dump_temporal_value(temporal: TemporalValue) -> str:

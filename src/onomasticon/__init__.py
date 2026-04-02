@@ -2,7 +2,7 @@
 
 from onomasticon.app import OnomasticonApp
 from onomasticon.core.entities import AnyEntity, Entity, EntityType, Organization
-from onomasticon.core.statements import Reference, Statement
+from onomasticon.core.statements import Certainty, Reference, Statement, StatementStatus
 from onomasticon.core.temporal import TemporalValue
 from onomasticon.core.repository import (
     EntityRepository,
@@ -15,6 +15,7 @@ from onomasticon.core.repository import (
 
 __all__ = [
     "AnyEntity",
+    "Certainty",
     "Entity",
     "EntityRepository",
     "EntityValidationError",
@@ -27,5 +28,6 @@ __all__ = [
     "RepositoryError",
     "RepositoryLayout",
     "Statement",
+    "StatementStatus",
     "TemporalValue",
 ]
