@@ -14,12 +14,16 @@ from onomasticon.core import (
     Identifier,
     EntityValidationError,
     EntityWriteError,
+    ExternalAuthorityTarget,
     Holding,
     IdentifierCollisionError,
+    LocalEntityTarget,
+    Mention,
     Organization,
     OrganizationSubtype,
     PlaceSubtype,
     RepositoryLayout,
+    ResolutionStatus,
     Sex,
     StatementProperty,
     StatementStatus,
@@ -43,12 +47,16 @@ def test_core_exports_minimal_entity_baseline() -> None:
     assert Identifier is not None
     assert EntityValidationError is not None
     assert EntityWriteError is not None
+    assert ExternalAuthorityTarget is not None
     assert Holding is not None
     assert IdentifierCollisionError is not None
+    assert LocalEntityTarget is not None
+    assert Mention is not None
     assert Organization is not None
     assert OrganizationSubtype is not None
     assert PlaceSubtype is not None
     assert RepositoryLayout is not None
+    assert ResolutionStatus is not None
     assert Sex is not None
     assert StatementProperty is not None
     assert StatementStatus is not None

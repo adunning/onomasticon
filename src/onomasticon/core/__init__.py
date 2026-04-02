@@ -33,6 +33,13 @@ from onomasticon.core.properties import (
     property_allowed_for_documentary_type,
     property_allowed_for_entity_type,
 )
+from onomasticon.core.reconciliation import (
+    ExternalAuthorityTarget,
+    LocalEntityTarget,
+    Mention,
+    ResolutionStatus,
+    MentionTarget,
+)
 from onomasticon.core.ports import (
     DocumentaryCodec,
     DocumentaryStore,
@@ -101,6 +108,8 @@ __all__ = [
     "LOCAL_IDENTIFIER_LENGTH",
     "Holding",
     "Manifestation",
+    "Mention",
+    "MentionTarget",
     "Organization",
     "OrganizationSubtype",
     "Person",
@@ -111,6 +120,7 @@ __all__ = [
     "Reference",
     "RepositoryError",
     "RepositoryLayout",
+    "ResolutionStatus",
     "Sex",
     "SexValue",
     "SourceRecordCodec",
@@ -123,6 +133,8 @@ __all__ = [
     "TextValue",
     "Work",
     "documentary_type_for_unit",
+    "ExternalAuthorityTarget",
+    "LocalEntityTarget",
     "property_allowed_for_documentary_type",
     "property_allowed_for_entity_type",
     "validate_local_identifier",

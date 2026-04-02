@@ -58,6 +58,22 @@ The intended architectural split is:
 
 In this design, local entity creation is one possible outcome of reconciliation, not the default meaning of reconciliation.
 
+## Canonical entities versus source mentions
+
+Onomasticon now distinguishes clearly between:
+
+- canonical local entities: curated first-class objects in the local repository, each with a stable local identifier
+- source mentions: extracted occurrences such as TEI `persName`, `orgName`, `geogName`, `author`, or `title`, anchored in source context and not requiring a local identifier
+- mention-level matching outcomes: lightweight fields on the mention recording a local target, an external authority, several candidates, or no target
+
+This means internal PIDs are required for canonical local entities, but not for every extracted occurrence.
+
+For example:
+
+- a person in a local prosopography should receive a stable local identifier
+- a `persName` in a TEI edition may remain a mention resolved to an external authority or an existing local entity, then be written back into the TEI without creating a new local object
+- an imported repertory row may remain a normalized source record plus reconciliation evidence until there is a reason to promote it into the local canonical store
+
 ## Current model
 
 ### Entities
@@ -161,6 +177,17 @@ Normalized source records live separately from canonical entities. They can carr
 - optional note
 
 This keeps external-source normalization distinct from local canonical scholarship. It also allows ingest workflows in which imported records are matched and reasoned over without being promoted immediately into local canonical entities.
+
+### Mentions and matching
+
+Source mentions model extracted occurrences in a document or source record. They are anchored by source, record, and or locator information and may carry appellations, identifiers, and statements as evidence for matching.
+
+Each mention may then record whether it:
+
+- matched one local canonical entity
+- matched one external authority
+- remained ambiguous among several candidates
+- remained unresolved or was explicitly rejected
 
 ### Documentary units
 
@@ -343,6 +370,7 @@ redirect = "a1b2c3"
 - `src/onomasticon/core/statements.py`: typed scholarly statements, references, qualifiers, status, and certainty
 - `src/onomasticon/core/temporal.py`: EDTF-backed temporal values
 - `src/onomasticon/core/properties.py`: controlled statement property vocabulary and applicability rules
+- `src/onomasticon/core/reconciliation.py`: source mentions and reconciliation outcomes
 - `src/onomasticon/core/ports.py`: format-agnostic storage and serialisation ports
 - `src/onomasticon/core/repository.py`: default TOML adapter for canonical entities
 - `src/onomasticon/core/documentary.py`: documentary models for holdings, components, and content items

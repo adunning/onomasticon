@@ -21,6 +21,12 @@ from onomasticon.core.ports import (
     EntityStore,
     SourceRecordStore,
 )
+from onomasticon.core.reconciliation import (
+    ExternalAuthorityTarget,
+    LocalEntityTarget,
+    Mention,
+    ResolutionStatus,
+)
 from onomasticon.core.properties import (
     StatementProperty,
     property_allowed_for_documentary_type,
@@ -70,12 +76,16 @@ __all__ = [
     "Organization",
     "OrganizationSubtype",
     "PlaceSubtype",
+    "Mention",
     "Ascription",
+    "ExternalAuthorityTarget",
+    "LocalEntityTarget",
     "Qualifier",
     "QualifierProperty",
     "Reference",
     "RepositoryError",
     "RepositoryLayout",
+    "ResolutionStatus",
     "Sex",
     "SourceRecordStore",
     "Statement",

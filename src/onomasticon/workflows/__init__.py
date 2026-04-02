@@ -1,1 +1,1 @@
-"""Workflow orchestration hooks for future application flows."""
+"""Workflow orchestration hooks for import, reconciliation, and annotation."""
