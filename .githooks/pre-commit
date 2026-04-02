@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+before="$(mktemp)"
+after="$(mktemp)"
+trap 'rm -f "$before" "$after"' EXIT
+
+git diff --name-only -- '*.py' >"$before"
+
+uv run ruff format .
+uv run ruff check .
+uv run ty check
+
+git diff --name-only -- '*.py' >"$after"
+
+if ! cmp -s "$before" "$after"; then
+  printf '%s\n' 'Pre-commit hook reformatted files. Review and stage the changes, then commit again.' >&2
+  exit 1
+fi

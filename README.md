@@ -53,6 +53,14 @@ Run the test suite with:
 uv run pytest
 ```
 
+Optional local hook setup:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The pre-commit hook runs Ruff formatting, Ruff linting, and `ty` type checking. If formatting changes files, it stops so the updated files can be reviewed and staged before committing again.
+
 ## Repository
 
 Canonical repository: [adunning/onomasticon](https://github.com/adunning/onomasticon)
