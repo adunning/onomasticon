@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from onomasticon.core.entities import AnyEntity, Person
+from onomasticon.core.identifiers import Identifier
 from onomasticon.core.repository import (
     EntityRepository,
     EntityValidationError,
@@ -20,6 +21,7 @@ def test_entity_round_trips_through_toml() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
     entity = Person(
         id="a1b2c3",
+        identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
                 property="creator",
@@ -64,8 +66,12 @@ def test_repository_rejects_unknown_entity_types() -> None:
     [
         ('id = "a1b2c3"\ninvalid = [\n', "Invalid TOML entity document"),
         ('id = "a1b2c3"\nextra = "value"\n', "Unexpected entity fields: extra"),
-        ("id = 42\n", "Expected 'id' to be a non-empty string"),
-        ('id = "a1b2c3"\nnote = 42\n', "Expected 'note' to be a string"),
+        ("id = 42\n", "id must be a non-empty string"),
+        ('id = "a1b2c3"\nnote = 42\n', "note must be a string"),
+        (
+            'id = "a1b2c3"\n[[identifiers]]\nscheme = 42\nvalue = "Q12345"\n',
+            "scheme must be a non-empty string",
+        ),
     ],
 )
 def test_repository_rejects_invalid_toml_shapes(content: str, message: str) -> None:

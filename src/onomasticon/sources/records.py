@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from onomasticon.core.entities import EntityType
+from onomasticon.core.identifiers import Identifier
 from onomasticon.core.statements import Statement
+from onomasticon.core.validation import require_non_empty_string
 
 
 @dataclass(slots=True, frozen=True)
@@ -15,13 +17,10 @@ class SourceRecord:
     source: str
     record_id: str
     entity_type: EntityType | None = None
+    identifiers: tuple[Identifier, ...] = field(default_factory=tuple)
     statements: tuple[Statement, ...] = field(default_factory=tuple)
     note: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.source.strip():
-            msg = "source must be a non-empty string."
-            raise ValueError(msg)
-        if not self.record_id.strip():
-            msg = "record_id must be a non-empty string."
-            raise ValueError(msg)
+        require_non_empty_string(self.source, field_name="source")
+        require_non_empty_string(self.record_id, field_name="record_id")

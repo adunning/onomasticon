@@ -19,6 +19,7 @@ from onomasticon.core.entities import (
     Place,
     Work,
 )
+from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import LOCAL_IDENTIFIER_LENGTH
 from onomasticon.core.statements import (
     DateValue,
@@ -28,6 +29,11 @@ from onomasticon.core.statements import (
     Reference,
     Statement,
     TextValue,
+)
+from onomasticon.core.validation import (
+    optional_string,
+    require_list,
+    require_non_empty_string,
 )
 
 _IDENTIFIER_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -95,6 +101,7 @@ class EntityRepository:
             lines.append(f"redirect = {_quote_string(entity.redirect)}")
         if entity.note is not None:
             lines.append(f"note = {_quote_string(entity.note)}")
+        lines.extend(_dump_identifiers(entity.identifiers))
         lines.extend(_dump_statements(entity.statements))
         return "\n".join(lines) + "\n"
 
@@ -153,7 +160,14 @@ def _entity_type_for(entity: AnyEntity) -> EntityType | None:
 
 
 def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
-    allowed_keys = {"id", "entity_type", "statements", "redirect", "note"}
+    allowed_keys = {
+        "id",
+        "entity_type",
+        "identifiers",
+        "statements",
+        "redirect",
+        "note",
+    }
     extra_keys = set(data) - allowed_keys
     if extra_keys:
         extras = ", ".join(sorted(extra_keys))
@@ -162,6 +176,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
 
     entity_id = _require_string(data, "id")
     entity_type_raw = _optional_string(data, "entity_type")
+    identifiers = _parse_identifiers(data.get("identifiers"))
     redirect = _optional_string(data, "redirect")
     note = _optional_string(data, "note")
     statements = _parse_statements(data.get("statements"))
@@ -174,48 +189,64 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
         msg = f"Unknown entity_type: {entity_type_raw}."
         raise EntityValidationError(msg) from exc
 
+    entity_class = _entity_class_for(entity_type)
+    return entity_class(
+        id=entity_id,
+        identifiers=identifiers,
+        statements=statements,
+        redirect=redirect,
+        note=note,
+    )
+
+
+def _entity_class_for(entity_type: EntityType | None) -> type[AnyEntity]:
     match entity_type:
         case EntityType.PERSON:
-            return Person(
-                id=entity_id, statements=statements, redirect=redirect, note=note
-            )
+            return Person
         case EntityType.PLACE:
-            return Place(
-                id=entity_id, statements=statements, redirect=redirect, note=note
-            )
+            return Place
         case EntityType.ORGANIZATION:
-            return Organization(
-                id=entity_id, statements=statements, redirect=redirect, note=note
-            )
+            return Organization
         case EntityType.WORK:
-            return Work(
-                id=entity_id, statements=statements, redirect=redirect, note=note
-            )
+            return Work
         case EntityType.EXPRESSION:
-            return Expression(
-                id=entity_id, statements=statements, redirect=redirect, note=note
-            )
+            return Expression
         case EntityType.MANIFESTATION:
-            return Manifestation(
-                id=entity_id, statements=statements, redirect=redirect, note=note
-            )
+            return Manifestation
         case EntityType.ITEM:
-            return Item(
-                id=entity_id, statements=statements, redirect=redirect, note=note
-            )
+            return Item
         case None:
-            return Entity(
-                id=entity_id, statements=statements, redirect=redirect, note=note
+            return Entity
+
+
+def _parse_identifiers(raw: object) -> tuple[Identifier, ...]:
+    if raw is None:
+        return ()
+    raw_list = _require_list(raw, field_name="identifiers")
+    identifiers: list[Identifier] = []
+    for item in raw_list:
+        data = _require_table(item)
+        allowed_keys = {"scheme", "value", "note"}
+        extra_keys = set(data) - allowed_keys
+        if extra_keys:
+            extras = ", ".join(sorted(extra_keys))
+            msg = f"Unexpected identifier fields: {extras}."
+            raise EntityValidationError(msg)
+        identifiers.append(
+            Identifier(
+                scheme=_require_string(data, "scheme"),
+                value=_require_string(data, "value"),
+                note=_optional_string(data, "note"),
             )
+        )
+    return tuple(identifiers)
 
 
 def _parse_statements(raw: object) -> tuple[Statement, ...]:
     if raw is None:
         return ()
-    if not isinstance(raw, list):
-        msg = "Expected 'statements' to be a list."
-        raise EntityValidationError(msg)
-    return tuple(_statement_from_mapping(_require_table(item)) for item in raw)
+    raw_list = _require_list(raw, field_name="statements")
+    return tuple(_statement_from_mapping(_require_table(item)) for item in raw_list)
 
 
 def _statement_from_mapping(data: dict[str, object]) -> Statement:
@@ -244,10 +275,7 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
     raw_value = data[value_key]
     match value_key:
         case "entity":
-            if not isinstance(raw_value, str):
-                msg = "Expected 'entity' to be a string."
-                raise EntityValidationError(msg)
-            value = EntityValue(raw_value)
+            value = EntityValue(_require_raw_string(raw_value, field_name="entity"))
         case "identifier":
             identifier = _require_table(raw_value)
             value = IdentifierValue(
@@ -255,20 +283,11 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
                 value=_require_string(identifier, "value"),
             )
         case "text":
-            if not isinstance(raw_value, str):
-                msg = "Expected 'text' to be a string."
-                raise EntityValidationError(msg)
-            value = TextValue(raw_value)
+            value = TextValue(_require_raw_string(raw_value, field_name="text"))
         case "lang":
-            if not isinstance(raw_value, str):
-                msg = "Expected 'lang' to be a string."
-                raise EntityValidationError(msg)
-            value = LanguageTagValue(raw_value)
+            value = LanguageTagValue(_require_raw_string(raw_value, field_name="lang"))
         case "date":
-            if not isinstance(raw_value, str):
-                msg = "Expected 'date' to be a string."
-                raise EntityValidationError(msg)
-            value = DateValue(raw_value)
+            value = DateValue(_require_raw_string(raw_value, field_name="date"))
         case _:
             raise AssertionError(value_key)
     return Statement(
@@ -282,11 +301,9 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
 def _parse_references(raw: object) -> tuple[Reference, ...]:
     if raw is None:
         return ()
-    if not isinstance(raw, list):
-        msg = "Expected 'refs' to be a list."
-        raise EntityValidationError(msg)
+    raw_list = _require_list(raw, field_name="refs")
     references: list[Reference] = []
-    for item in raw:
+    for item in raw_list:
         data = _require_table(item)
         allowed_keys = {"source", "record", "locator", "note"}
         extra_keys = set(data) - allowed_keys
@@ -333,6 +350,17 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
     return lines
 
 
+def _dump_identifiers(identifiers: tuple[Identifier, ...]) -> list[str]:
+    lines: list[str] = []
+    for identifier in identifiers:
+        lines.append("[[identifiers]]")
+        lines.append(f"scheme = {_quote_string(identifier.scheme)}")
+        lines.append(f"value = {_quote_string(identifier.value)}")
+        if identifier.note is not None:
+            lines.append(f"note = {_quote_string(identifier.note)}")
+    return lines
+
+
 def _dump_reference(reference: Reference) -> str:
     parts = [f"source = {_quote_string(reference.source)}"]
     if reference.record is not None:
@@ -358,21 +386,28 @@ def _require_table(raw: object) -> dict[str, object]:
 
 
 def _require_string(data: dict[str, object], key: str) -> str:
-    raw = data.get(key)
-    if not isinstance(raw, str) or not raw.strip():
-        msg = f"Expected '{key}' to be a non-empty string."
-        raise EntityValidationError(msg)
-    return raw
+    return _require_raw_string(data.get(key), field_name=key)
 
 
 def _optional_string(data: dict[str, object], key: str) -> str | None:
-    raw = data.get(key)
-    if raw is None:
-        return None
-    if not isinstance(raw, str):
-        msg = f"Expected '{key}' to be a string."
-        raise EntityValidationError(msg)
-    return raw
+    try:
+        return optional_string(data.get(key), field_name=key)
+    except ValueError as exc:
+        raise EntityValidationError(str(exc)) from exc
+
+
+def _require_raw_string(raw: object, *, field_name: str) -> str:
+    try:
+        return require_non_empty_string(raw, field_name=field_name)
+    except ValueError as exc:
+        raise EntityValidationError(str(exc)) from exc
+
+
+def _require_list(raw: object, *, field_name: str) -> list[object]:
+    try:
+        return require_list(raw, field_name=field_name)
+    except ValueError as exc:
+        raise EntityValidationError(str(exc)) from exc
 
 
 def _quote_string(value: str) -> str:

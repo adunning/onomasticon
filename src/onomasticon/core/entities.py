@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import validate_local_identifier
 from onomasticon.core.statements import Statement
 
@@ -31,6 +32,7 @@ class Entity:
     """
 
     id: str
+    identifiers: tuple[Identifier, ...] = field(default_factory=tuple)
     statements: tuple[Statement, ...] = field(default_factory=tuple)
     redirect: str | None = None
     note: str | None = None

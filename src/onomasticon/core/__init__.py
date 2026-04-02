@@ -12,6 +12,7 @@ from onomasticon.core.entities import (
     Place,
     Work,
 )
+from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import (
     LOCAL_IDENTIFIER_LENGTH,
     validate_local_identifier,
@@ -45,6 +46,7 @@ __all__ = [
     "EntityType",
     "Expression",
     "IdentifierValue",
+    "Identifier",
     "IdentifierCollisionError",
     "Item",
     "LanguageTagValue",

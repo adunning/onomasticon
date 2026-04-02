@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from onomasticon.core.local_ids import validate_local_identifier
+from onomasticon.core.validation import require_non_empty_string
 
 
 @dataclass(slots=True, frozen=True)
@@ -17,15 +18,11 @@ class Reference:
     note: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.source.strip():
-            msg = "source must be a non-empty string."
-            raise ValueError(msg)
-        if self.record is not None and not self.record.strip():
-            msg = "record must be a non-empty string when present."
-            raise ValueError(msg)
-        if self.locator is not None and not self.locator.strip():
-            msg = "locator must be a non-empty string when present."
-            raise ValueError(msg)
+        require_non_empty_string(self.source, field_name="source")
+        if self.record is not None:
+            require_non_empty_string(self.record, field_name="record")
+        if self.locator is not None:
+            require_non_empty_string(self.locator, field_name="locator")
         if self.record is None and self.locator is None:
             msg = "reference must define at least one of record or locator."
             raise ValueError(msg)
@@ -49,12 +46,8 @@ class IdentifierValue:
     value: str
 
     def __post_init__(self) -> None:
-        if not self.scheme.strip():
-            msg = "scheme must be a non-empty string."
-            raise ValueError(msg)
-        if not self.value.strip():
-            msg = "value must be a non-empty string."
-            raise ValueError(msg)
+        require_non_empty_string(self.scheme, field_name="scheme")
+        require_non_empty_string(self.value, field_name="value")
 
 
 @dataclass(slots=True, frozen=True)
@@ -64,9 +57,7 @@ class TextValue:
     text: str
 
     def __post_init__(self) -> None:
-        if not self.text.strip():
-            msg = "text must be a non-empty string."
-            raise ValueError(msg)
+        require_non_empty_string(self.text, field_name="text")
 
 
 @dataclass(slots=True, frozen=True)
@@ -76,9 +67,7 @@ class LanguageTagValue:
     language_tag: str
 
     def __post_init__(self) -> None:
-        if not self.language_tag.strip():
-            msg = "language_tag must be a non-empty string."
-            raise ValueError(msg)
+        require_non_empty_string(self.language_tag, field_name="language_tag")
 
 
 @dataclass(slots=True, frozen=True)
@@ -88,9 +77,7 @@ class DateValue:
     edtf: str
 
     def __post_init__(self) -> None:
-        if not self.edtf.strip():
-            msg = "edtf must be a non-empty string."
-            raise ValueError(msg)
+        require_non_empty_string(self.edtf, field_name="edtf")
 
 
 type StatementValue = (
@@ -108,6 +95,4 @@ class Statement:
     note: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.property.strip():
-            msg = "property must be a non-empty string."
-            raise ValueError(msg)
+        require_non_empty_string(self.property, field_name="property")

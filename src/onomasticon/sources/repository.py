@@ -8,6 +8,8 @@ import tomllib
 
 from onomasticon.core.entities import EntityType
 from onomasticon.core.repository import (
+    _dump_identifiers,
+    _parse_identifiers,
     EntityValidationError,
     EntityWriteError,
     _dump_statements,
@@ -58,6 +60,7 @@ class SourceRecordRepository:
             lines.append(f"entity_type = {_quote_string(record.entity_type.value)}")
         if record.note is not None:
             lines.append(f"note = {_quote_string(record.note)}")
+        lines.extend(_dump_identifiers(record.identifiers))
         lines.extend(_dump_statements(record.statements))
         return "\n".join(lines) + "\n"
 
@@ -84,7 +87,14 @@ class SourceRecordRepository:
 
 
 def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
-    allowed_keys = {"source", "record_id", "entity_type", "note", "statements"}
+    allowed_keys = {
+        "source",
+        "record_id",
+        "entity_type",
+        "identifiers",
+        "note",
+        "statements",
+    }
     extra_keys = set(data) - allowed_keys
     if extra_keys:
         extras = ", ".join(sorted(extra_keys))
@@ -102,6 +112,7 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
         source=_require_string(data, "source"),
         record_id=_require_string(data, "record_id"),
         entity_type=entity_type,
+        identifiers=_parse_identifiers(data.get("identifiers")),
         statements=_parse_statements(data.get("statements")),
         note=_optional_string(data, "note"),
     )
