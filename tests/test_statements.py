@@ -44,6 +44,18 @@ def test_statement_accepts_multiple_value_kinds(value: StatementValue) -> None:
     assert statement.value == value
 
 
+def test_language_tag_value_normalizes_and_labels_tags() -> None:
+    value = LanguageTagValue("eng_US")
+
+    assert value.language_tag == "en-US"
+    assert value.label() == "English (United States)"
+
+
+def test_language_tag_value_rejects_invalid_tags() -> None:
+    with pytest.raises(ValueError, match="valid BCP 47 language tag"):
+        LanguageTagValue("123")
+
+
 def test_entity_value_rejects_non_local_identifier_shapes() -> None:
     with pytest.raises(ValueError, match="lowercase ASCII letters and digits"):
         EntityValue("Q12345")

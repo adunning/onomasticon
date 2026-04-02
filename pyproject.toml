@@ -14,6 +14,8 @@ authors = [
 ]
 dependencies = [
     "edtf>=5.0.1",
+    "langcodes>=3.5.1",
+    "language-data>=1.4.0",
 ]
 
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from langcodes import Language
+
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import validate_local_identifier
 from onomasticon.core.temporal import TemporalValue
@@ -64,7 +66,19 @@ class LanguageTagValue:
     language_tag: str
 
     def __post_init__(self) -> None:
-        require_non_empty_string(self.language_tag, field_name="language_tag")
+        language_tag = require_non_empty_string(
+            self.language_tag,
+            field_name="language_tag",
+        )
+        parsed = Language.get(language_tag)
+        if not parsed.is_valid():
+            msg = f"language_tag must be a valid BCP 47 language tag: {language_tag!r}."
+            raise ValueError(msg)
+        object.__setattr__(self, "language_tag", str(parsed))
+
+    def label(self, *, display_language: str = "en") -> str:
+        """Return a human-readable label for the normalized tag."""
+        return Language.get(self.language_tag).display_name(display_language)
 
 
 @dataclass(slots=True, frozen=True)
