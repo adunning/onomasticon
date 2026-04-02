@@ -1,6 +1,7 @@
 """Onomasticon application package."""
 
 from onomasticon.app import OnomasticonApp
+from onomasticon.core.appellations import Appellation, AppellationKind
 from onomasticon.core.entities import (
     AnyEntity,
     Entity,
@@ -31,6 +32,8 @@ from onomasticon.core.repository import (
 )
 
 __all__ = [
+    "Appellation",
+    "AppellationKind",
     "AnyEntity",
     "Certainty",
     "Entity",

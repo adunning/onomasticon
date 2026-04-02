@@ -5,6 +5,12 @@ from unittest.mock import patch
 
 import pytest
 
+from onomasticon.core.appellations import (
+    Appellation,
+    AppellationKind,
+    AppellationPart,
+    AppellationPartKind,
+)
 from onomasticon.core.entities import (
     AnyEntity,
     Organization,
@@ -40,6 +46,17 @@ def test_entity_round_trips_through_toml() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
     entity = Work(
         id="a1b2c3",
+        appellations=(
+            Appellation(
+                kind=AppellationKind.TITLE,
+                parts=(
+                    AppellationPart(
+                        kind=AppellationPartKind.GENERIC, value="De tribulatione"
+                    ),
+                ),
+                language="la",
+            ),
+        ),
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
@@ -59,6 +76,7 @@ def test_entity_round_trips_through_toml() -> None:
 
     assert reparsed == entity
     assert isinstance(reparsed, Work)
+    assert "[[appellations]]" in serialized
 
 
 def test_repository_layout_uses_one_entity_per_file() -> None:
@@ -140,6 +158,69 @@ def test_repository_round_trips_temporal_values() -> None:
     assert 'date = { edtf = "2024~", label = "circa 2024" }' in serialized
     assert 'status = "attested_only"' in serialized
     assert 'certainty = "medium"' in serialized
+    assert reparsed == entity
+
+
+def test_repository_round_trips_descriptive_work_appellations() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    entity = Work(
+        id="a1b2c3",
+        appellations=(
+            Appellation(
+                kind=AppellationKind.DESCRIPTIVE,
+                display_value="Letter from X to Y concerning Z",
+                language="en",
+            ),
+            Appellation(
+                kind=AppellationKind.INCIPIT,
+                parts=(
+                    AppellationPart(
+                        kind=AppellationPartKind.GENERIC,
+                        value="In principio tribulationis",
+                    ),
+                ),
+                language="la",
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(entity)
+    reparsed = repository.loads(serialized)
+
+    assert 'kind = "descriptive"' in serialized
+    assert 'kind = "incipit"' in serialized
+    assert 'display_value = "Letter from X to Y concerning Z"' in serialized
+    assert "[[appellations.parts]]" in serialized
+    assert reparsed == entity
+
+
+def test_repository_round_trips_person_name_parts_with_references() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    entity = Person(
+        id="a1b2c3",
+        appellations=(
+            Appellation(
+                kind=AppellationKind.ATTESTED,
+                parts=(
+                    AppellationPart(kind=AppellationPartKind.GIVEN, value="Galfridus"),
+                    AppellationPart(kind=AppellationPartKind.FAMILY, value="Chaucer"),
+                ),
+                language="la",
+                references=(Reference(source="dnb", record="123456"),),
+                status=StatementStatus.ATTESTED_ONLY,
+                certainty=Certainty.HIGH,
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(entity)
+    reparsed = repository.loads(serialized)
+
+    assert 'kind = "given"' in serialized
+    assert 'kind = "family"' in serialized
+    assert 'status = "attested_only"' in serialized
+    assert 'certainty = "high"' in serialized
+    assert 'refs = [{ source = "dnb", record = "123456" }]' in serialized
     assert reparsed == entity
 
 

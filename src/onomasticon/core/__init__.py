@@ -1,5 +1,6 @@
 """Canonical core models for Onomasticon."""
 
+from onomasticon.core.appellations import Appellation, AppellationKind
 from onomasticon.core.entities import (
     AnyEntity,
     Entity,
@@ -47,6 +48,8 @@ from onomasticon.core.statements import (
 from onomasticon.core.temporal import TemporalValue
 
 __all__ = [
+    "Appellation",
+    "AppellationKind",
     "AnyEntity",
     "Certainty",
     "DateValue",

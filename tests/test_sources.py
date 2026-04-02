@@ -4,6 +4,12 @@ from pathlib import Path
 
 import pytest
 
+from onomasticon.core.appellations import (
+    Appellation,
+    AppellationKind,
+    AppellationPart,
+    AppellationPartKind,
+)
 from onomasticon.core.entities import (
     EntityType,
     OrganizationSubtype,
@@ -33,6 +39,17 @@ def test_source_record_round_trips_through_toml() -> None:
         source="wikidata",
         record_id="Q12345",
         entity_type=EntityType.WORK,
+        appellations=(
+            Appellation(
+                kind=AppellationKind.TITLE,
+                parts=(
+                    AppellationPart(
+                        kind=AppellationPartKind.GENERIC, value="De tribulatione"
+                    ),
+                ),
+                language="la",
+            ),
+        ),
         identifiers=(Identifier("wikidata", "Q12345"),),
         statements=(
             Statement(
@@ -56,6 +73,7 @@ def test_source_record_round_trips_through_toml() -> None:
     reparsed = repository.loads(serialized)
 
     assert reparsed == record
+    assert "[[appellations]]" in serialized
 
 
 def test_source_layout_uses_source_and_record_identifier() -> None:

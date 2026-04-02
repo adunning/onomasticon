@@ -7,6 +7,7 @@ from pathlib import Path
 from secrets import choice
 import tomllib
 
+from onomasticon.core.appellations import Appellation, AppellationPart
 from onomasticon.core.entities import (
     AnyEntity,
     Entity,
@@ -108,6 +109,7 @@ class EntityRepository:
             lines.append(f"redirect = {_quote_string(entity.redirect)}")
         if entity.note is not None:
             lines.append(f"note = {_quote_string(entity.note)}")
+        lines.extend(_dump_appellations(entity.appellations))
         lines.extend(_dump_identifiers(entity.identifiers))
         lines.extend(_dump_statements(entity.statements))
         return "\n".join(lines) + "\n"
@@ -174,6 +176,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
     allowed_keys = {
         "id",
         "type",
+        "appellations",
         "identifiers",
         "statements",
         "redirect",
@@ -187,6 +190,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
 
     entity_id = _require_string(data, "id")
     entity_type_raw = _optional_string(data, "type")
+    appellations = _parse_appellations(data.get("appellations"))
     identifiers = _parse_identifiers(data.get("identifiers"))
     redirect = _optional_string(data, "redirect")
     note = _optional_string(data, "note")
@@ -203,6 +207,7 @@ def _entity_from_mapping(data: dict[str, object]) -> AnyEntity:
     entity_class = _entity_class_for(entity_type)
     return entity_class(
         id=entity_id,
+        appellations=appellations,
         identifiers=identifiers,
         statements=statements,
         redirect=redirect,
@@ -268,6 +273,73 @@ def _parse_identifiers(raw: object) -> tuple[Identifier, ...]:
             )
         )
     return tuple(identifiers)
+
+
+def _parse_appellations(raw: object) -> tuple[Appellation, ...]:
+    if raw is None:
+        return ()
+    raw_list = _require_list(raw, field_name="appellations")
+    appellations: list[Appellation] = []
+    for item in raw_list:
+        data = _require_table(item)
+        allowed_keys = {
+            "kind",
+            "parts",
+            "display_value",
+            "language",
+            "script",
+            "refs",
+            "status",
+            "certainty",
+            "note",
+        }
+        extra_keys = set(data) - allowed_keys
+        if extra_keys:
+            extras = ", ".join(sorted(extra_keys))
+            msg = f"Unexpected appellation fields: {extras}."
+            raise EntityValidationError(msg)
+        try:
+            appellations.append(
+                Appellation(
+                    kind=_require_string(data, "kind"),
+                    parts=_parse_appellation_parts(data.get("parts")),
+                    display_value=_optional_string(data, "display_value"),
+                    language=_optional_string(data, "language"),
+                    script=_optional_string(data, "script"),
+                    references=_parse_references(data.get("refs")),
+                    status=_parse_statement_status(data.get("status")),
+                    certainty=_parse_certainty(data.get("certainty")),
+                    note=_optional_string(data, "note"),
+                )
+            )
+        except ValueError as exc:
+            raise EntityValidationError(str(exc)) from exc
+    return tuple(appellations)
+
+
+def _parse_appellation_parts(raw: object) -> tuple[AppellationPart, ...]:
+    if raw is None:
+        return ()
+    raw_list = _require_list(raw, field_name="parts")
+    parts: list[AppellationPart] = []
+    for item in raw_list:
+        data = _require_table(item)
+        allowed_keys = {"kind", "value"}
+        extra_keys = set(data) - allowed_keys
+        if extra_keys:
+            extras = ", ".join(sorted(extra_keys))
+            msg = f"Unexpected appellation part fields: {extras}."
+            raise EntityValidationError(msg)
+        try:
+            parts.append(
+                AppellationPart(
+                    kind=_require_string(data, "kind"),
+                    value=_require_string(data, "value"),
+                )
+            )
+        except ValueError as exc:
+            raise EntityValidationError(str(exc)) from exc
+    return tuple(parts)
 
 
 def _parse_statements(raw: object) -> tuple[Statement, ...]:
@@ -405,6 +477,38 @@ def _dump_identifiers(identifiers: tuple[Identifier, ...]) -> list[str]:
         lines.append(f"value = {_quote_string(identifier.value)}")
         if identifier.note is not None:
             lines.append(f"note = {_quote_string(identifier.note)}")
+    return lines
+
+
+def _dump_appellations(appellations: tuple[Appellation, ...]) -> list[str]:
+    lines: list[str] = []
+    for appellation in appellations:
+        lines.append("[[appellations]]")
+        kind = getattr(appellation.kind, "value", appellation.kind)
+        lines.append(f"kind = {_quote_string(kind)}")
+        if appellation.display_value is not None:
+            lines.append(f"display_value = {_quote_string(appellation.display_value)}")
+        if appellation.language is not None:
+            lines.append(f"language = {_quote_string(appellation.language)}")
+        if appellation.script is not None:
+            lines.append(f"script = {_quote_string(appellation.script)}")
+        if appellation.status is not StatementStatus.ACCEPTED:
+            lines.append(f"status = {_quote_string(appellation.status.value)}")
+        if appellation.certainty is not None:
+            lines.append(f"certainty = {_quote_string(appellation.certainty.value)}")
+        if appellation.references:
+            refs = ", ".join(
+                _dump_reference(reference) for reference in appellation.references
+            )
+            lines.append(f"refs = [{refs}]")
+        if appellation.parts:
+            for part in appellation.parts:
+                lines.append("[[appellations.parts]]")
+                part_kind = getattr(part.kind, "value", part.kind)
+                lines.append(f"kind = {_quote_string(part_kind)}")
+                lines.append(f"value = {_quote_string(part.value)}")
+        if appellation.note is not None:
+            lines.append(f"note = {_quote_string(appellation.note)}")
     return lines
 
 

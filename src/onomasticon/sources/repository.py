@@ -12,7 +12,9 @@ from onomasticon.core.entities import (
     PlaceSubtype,
 )
 from onomasticon.core.repository import (
+    _dump_appellations,
     _dump_identifiers,
+    _parse_appellations,
     _parse_identifiers,
     _dump_reference,
     EntityValidationError,
@@ -75,6 +77,7 @@ class SourceRecordRepository:
             lines.append(f"type = {_quote_string(record.entity_type.value)}")
         if record.note is not None:
             lines.append(f"note = {_quote_string(record.note)}")
+        lines.extend(_dump_appellations(record.appellations))
         lines.extend(_dump_identifiers(record.identifiers))
         lines.extend(
             _dump_source_statements(
@@ -112,6 +115,7 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
         "source",
         "record_id",
         "type",
+        "appellations",
         "identifiers",
         "note",
         "statements",
@@ -134,6 +138,7 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
         record_id=_require_string(data, "record_id"),
         entity_type=entity_type,
         subtype=_parse_source_record_subtype(entity_type),
+        appellations=_parse_appellations(data.get("appellations")),
         identifiers=_parse_identifiers(data.get("identifiers")),
         statements=_parse_source_statements(
             data.get("statements"),

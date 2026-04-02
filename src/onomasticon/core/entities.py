@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from onomasticon.core.appellations import Appellation
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import validate_local_identifier
 from onomasticon.core.properties import property_allowed_for_entity_type
@@ -47,6 +48,7 @@ class Entity:
     """
 
     id: str
+    appellations: tuple[Appellation, ...] = field(default_factory=tuple)
     identifiers: tuple[Identifier, ...] = field(default_factory=tuple)
     statements: tuple[Statement, ...] = field(default_factory=tuple)
     redirect: str | None = None

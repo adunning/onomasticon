@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from onomasticon.core import (
+    Appellation,
+    AppellationKind,
     AnyEntity,
     Certainty,
     Entity,
@@ -23,6 +25,8 @@ from onomasticon.core import (
 
 def test_core_exports_minimal_entity_baseline() -> None:
     assert AnyEntity is not None
+    assert Appellation is not None
+    assert AppellationKind is not None
     assert Certainty is not None
     assert Entity is not None
     assert EntityRepository is not None

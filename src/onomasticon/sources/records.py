@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from onomasticon.core.appellations import Appellation
 from onomasticon.core.entities import EntityType, OrganizationSubtype, PlaceSubtype
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.properties import property_allowed_for_entity_type
@@ -19,6 +20,7 @@ class SourceRecord:
     record_id: str
     entity_type: EntityType | None = None
     subtype: PlaceSubtype | OrganizationSubtype | None = None
+    appellations: tuple[Appellation, ...] = field(default_factory=tuple)
     identifiers: tuple[Identifier, ...] = field(default_factory=tuple)
     statements: tuple[Statement, ...] = field(default_factory=tuple)
     note: str | None = None

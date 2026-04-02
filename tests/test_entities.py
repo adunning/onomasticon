@@ -4,6 +4,12 @@ from dataclasses import is_dataclass
 
 import pytest
 
+from onomasticon.core.appellations import (
+    Appellation,
+    AppellationKind,
+    AppellationPart,
+    AppellationPartKind,
+)
 from onomasticon.core.entities import (
     Entity,
     Organization,
@@ -22,6 +28,7 @@ def test_entity_requires_only_an_id() -> None:
 
     assert is_dataclass(entity)
     assert entity.id == "a1b2c3"
+    assert entity.appellations == ()
     assert entity.redirect is None
     assert entity.is_redirect is False
 
@@ -100,3 +107,22 @@ def test_person_accepts_person_specific_relationship_properties() -> None:
     )
 
     assert len(person.statements) == 3
+
+
+def test_entity_can_carry_appellations() -> None:
+    entity = Person(
+        id="a1b2c3",
+        appellations=(
+            Appellation(
+                kind=AppellationKind.PREFERRED,
+                parts=(
+                    AppellationPart(
+                        kind=AppellationPartKind.GENERIC, value="Pseudo-Dionysius"
+                    ),
+                ),
+                language="en",
+            ),
+        ),
+    )
+
+    assert entity.appellations[0].parts[0].value == "Pseudo-Dionysius"
