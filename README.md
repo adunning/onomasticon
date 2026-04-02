@@ -77,6 +77,7 @@ Statements are the core assertion model. Each statement has:
 - a controlled `property`
 - one typed value
 - references
+- optional qualifiers
 - status
 - certainty
 - note
@@ -89,6 +90,31 @@ Current value kinds include:
 - language tag
 - EDTF temporal value
 - controlled sex value
+- controlled ascription value for qualifiers
+
+Current qualifier support is intentionally narrow. The first controlled qualifier is:
+
+- `ascription`
+
+with values:
+
+- `attributed`
+- `pseudonymous`
+- `misattributed`
+- `anonymous`
+
+This makes it possible to distinguish, for example, accepted authorship from merely attested or rejected attribution without flattening everything into one status field.
+
+### Cross-entity validation
+
+Canonical repository operations validate certain entity-valued relations against the local repository:
+
+- `author` must point to a `person`
+- `translator` must point to a `person`
+- `nationality` must point to a `country`
+- `religious_order` must point to a `religious_order`
+
+These checks run when canonical entities are loaded from disk or written to disk, where repository context is available.
 
 ### Sources
 
@@ -132,21 +158,26 @@ status = "accepted"
 certainty = "medium"
 ```
 
-### Work with incipit, explicit, and attestation date
+### Work with multiple authors and attestation date
 
 ```toml
 id = "d4e5f6"
 type = "work"
 
 [[appellations]]
-kind = "incipit"
+kind = "title"
 language = "la"
-display_value = "In principio tribulationis"
+display_value = "De tribulatione"
 
-[[appellations]]
-kind = "explicit"
-language = "la"
-display_value = "Explicit de tribulatione"
+[[statements]]
+property = "author"
+entity = "a1b2c3"
+
+[[statements]]
+property = "author"
+entity = "b2c3d4"
+status = "attested_only"
+qualifiers = [{ property = "ascription", ascription = "attributed" }]
 
 [[statements]]
 property = "attested"
@@ -154,6 +185,8 @@ date = "123X/1245"
 status = "attested_only"
 refs = [{ source = "mmol", record = "manuscript_12345" }]
 ```
+
+Witness-specific observations such as incipits, explicits, rubrics, and final rubrics are not yet modelled separately. The current code can store them as appellations, but the intended long-term home for that material is a witness-level observation or attestation layer rather than the abstract `work` itself.
 
 ### Country
 
@@ -176,7 +209,7 @@ redirect = "a1b2c3"
 - `src/onomasticon/core/entities.py`: canonical entity classes and subtypes
 - `src/onomasticon/core/appellations.py`: provenance-bearing designations and structured name parts
 - `src/onomasticon/core/identifiers.py`: external identifiers
-- `src/onomasticon/core/statements.py`: typed scholarly statements, references, status, and certainty
+- `src/onomasticon/core/statements.py`: typed scholarly statements, references, qualifiers, status, and certainty
 - `src/onomasticon/core/temporal.py`: EDTF-backed temporal values
 - `src/onomasticon/core/properties.py`: controlled statement property vocabulary and applicability rules
 - `src/onomasticon/core/repository.py`: canonical entity parsing, serialization, and repository layout
