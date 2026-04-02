@@ -331,7 +331,7 @@ def _parse_appellations(raw: object) -> tuple[Appellation, ...]:
         allowed_keys = {
             "kind",
             "parts",
-            "display_value",
+            "value",
             "language",
             "script",
             "refs",
@@ -349,7 +349,7 @@ def _parse_appellations(raw: object) -> tuple[Appellation, ...]:
                 Appellation(
                     kind=_require_string(data, "kind"),
                     parts=_parse_appellation_parts(data.get("parts")),
-                    display_value=_optional_string(data, "display_value"),
+                    value=_optional_string(data, "value"),
                     language=_optional_string(data, "language"),
                     script=_optional_string(data, "script"),
                     references=_parse_references(data.get("refs")),
@@ -623,8 +623,8 @@ def _dump_appellations(appellations: tuple[Appellation, ...]) -> list[str]:
         lines.append("[[appellations]]")
         kind = getattr(appellation.kind, "value", appellation.kind)
         lines.append(f"kind = {_quote_string(kind)}")
-        if appellation.display_value is not None:
-            lines.append(f"display_value = {_quote_string(appellation.display_value)}")
+        if appellation.value is not None:
+            lines.append(f"value = {_quote_string(appellation.value)}")
         if appellation.language is not None:
             lines.append(f"language = {_quote_string(appellation.language)}")
         if appellation.script is not None:

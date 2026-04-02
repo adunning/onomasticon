@@ -62,7 +62,7 @@ Each appellation may carry:
 
 - a controlled `kind`
 - structured `parts`
-- an optional unstructured `display_value`
+- an optional unstructured `value`
 - language and script
 - references
 - status and certainty
@@ -167,7 +167,7 @@ type = "work"
 [[appellations]]
 kind = "title"
 language = "la"
-display_value = "De tribulatione"
+value = "De tribulatione"
 
 [[statements]]
 property = "author"

@@ -54,7 +54,7 @@ def test_entity_round_trips_through_toml() -> None:
         appellations=(
             Appellation(
                 kind=AppellationKind.TITLE,
-                display_value="De tribulatione",
+                value="De tribulatione",
                 language="la",
             ),
         ),
@@ -179,17 +179,17 @@ def test_repository_round_trips_descriptive_work_appellations() -> None:
         appellations=(
             Appellation(
                 kind=AppellationKind.DESCRIPTIVE,
-                display_value="Letter from X to Y concerning Z",
+                value="Letter from X to Y concerning Z",
                 language="en",
             ),
             Appellation(
                 kind=AppellationKind.INCIPIT,
-                display_value="In principio tribulationis",
+                value="In principio tribulationis",
                 language="la",
             ),
             Appellation(
                 kind=AppellationKind.EXPLICIT,
-                display_value="Explicit de tribulatione",
+                value="Explicit de tribulatione",
                 language="la",
             ),
         ),
@@ -201,9 +201,9 @@ def test_repository_round_trips_descriptive_work_appellations() -> None:
     assert 'kind = "descriptive"' in serialized
     assert 'kind = "incipit"' in serialized
     assert 'kind = "explicit"' in serialized
-    assert 'display_value = "Letter from X to Y concerning Z"' in serialized
-    assert 'display_value = "In principio tribulationis"' in serialized
-    assert 'display_value = "Explicit de tribulatione"' in serialized
+    assert 'value = "Letter from X to Y concerning Z"' in serialized
+    assert 'value = "In principio tribulationis"' in serialized
+    assert 'value = "Explicit de tribulatione"' in serialized
     assert reparsed == entity
 
 

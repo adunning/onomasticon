@@ -14,13 +14,13 @@ from onomasticon.core.statements import Certainty, Reference, StatementStatus
 def test_appellation_normalizes_kind_and_language() -> None:
     appellation = Appellation(
         kind="title",
-        display_value="De tribulatione",
+        value="De tribulatione",
         language="la",
     )
 
     assert appellation.kind is AppellationKind.TITLE
     assert appellation.language == "la"
-    assert appellation.display_value == "De tribulatione"
+    assert appellation.value == "De tribulatione"
 
 
 def test_appellation_can_carry_provenance_and_editorial_metadata() -> None:
@@ -40,30 +40,30 @@ def test_appellation_can_carry_provenance_and_editorial_metadata() -> None:
     assert appellation.certainty is Certainty.HIGH
 
 
-def test_appellation_can_fall_back_to_unstructured_display_value() -> None:
+def test_appellation_can_fall_back_to_unstructured_value() -> None:
     appellation = Appellation(
         kind=AppellationKind.DESCRIPTIVE,
-        display_value="Letter from X to Y concerning Z",
+        value="Letter from X to Y concerning Z",
         language="en",
     )
 
-    assert appellation.display_value == "Letter from X to Y concerning Z"
+    assert appellation.value == "Letter from X to Y concerning Z"
     assert appellation.parts == ()
 
 
 def test_appellation_rejects_unknown_kind() -> None:
     with pytest.raises(ValueError, match="Unknown appellation kind: heading"):
-        Appellation(display_value="Heading", kind="heading")
+        Appellation(value="Heading", kind="heading")
 
 
 def test_appellation_rejects_invalid_language_tags() -> None:
     with pytest.raises(ValueError, match="valid BCP 47 language tag"):
-        Appellation(display_value="Heading", kind="descriptive", language="123")
+        Appellation(value="Heading", kind="descriptive", language="123")
 
 
-def test_appellation_requires_parts_or_display_value() -> None:
+def test_appellation_requires_parts_or_value() -> None:
     with pytest.raises(
         ValueError,
-        match="appellation must define either parts or display_value",
+        match="appellation must define either parts or value",
     ):
         Appellation(kind="preferred")

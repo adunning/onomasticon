@@ -62,7 +62,7 @@ class Appellation:
 
     kind: AppellationKind | str
     parts: tuple[AppellationPart, ...] = field(default_factory=tuple)
-    display_value: str | None = None
+    value: str | None = None
     language: str | None = None
     script: str | None = None
     references: tuple[Reference, ...] = field(default_factory=tuple)
@@ -79,11 +79,11 @@ class Appellation:
             raise ValueError(msg) from exc
         object.__setattr__(self, "kind", normalized_kind)
 
-        if not self.parts and self.display_value is None:
-            msg = "appellation must define either parts or display_value."
+        if not self.parts and self.value is None:
+            msg = "appellation must define either parts or value."
             raise ValueError(msg)
-        if self.display_value is not None:
-            optional_string(self.display_value, field_name="display_value")
+        if self.value is not None:
+            optional_string(self.value, field_name="value")
 
         if self.language is not None:
             language_value = require_non_empty_string(

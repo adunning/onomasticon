@@ -44,7 +44,7 @@ def test_source_record_round_trips_through_toml() -> None:
         appellations=(
             Appellation(
                 kind=AppellationKind.TITLE,
-                display_value="De tribulatione",
+                value="De tribulatione",
                 language="la",
             ),
         ),
