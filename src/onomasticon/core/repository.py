@@ -251,7 +251,7 @@ def _parse_statements(raw: object) -> tuple[Statement, ...]:
 
 def _statement_from_mapping(data: dict[str, object]) -> Statement:
     allowed_keys = {
-        "prop",
+        "property",
         "entity",
         "identifier",
         "text",
@@ -291,7 +291,7 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         case _:
             raise AssertionError(value_key)
     return Statement(
-        property=_require_string(data, "prop"),
+        property=_require_string(data, "property"),
         value=value,
         references=_parse_references(data.get("refs")),
         note=_optional_string(data, "note"),
@@ -326,7 +326,7 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
     lines: list[str] = []
     for statement in statements:
         lines.append("[[statements]]")
-        lines.append(f"prop = {_quote_string(statement.property)}")
+        lines.append(f"property = {_quote_string(statement.property)}")
         match statement.value:
             case EntityValue(entity_id=entity_id):
                 lines.append(f"entity = {_quote_string(entity_id)}")

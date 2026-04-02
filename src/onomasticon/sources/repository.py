@@ -10,14 +10,23 @@ from onomasticon.core.entities import EntityType
 from onomasticon.core.repository import (
     _dump_identifiers,
     _parse_identifiers,
+    _dump_reference,
     EntityValidationError,
     EntityWriteError,
-    _dump_statements,
     _optional_string,
     _parse_statements,
     _quote_string,
     _require_string,
     _require_table,
+)
+from onomasticon.core.statements import (
+    DateValue,
+    EntityValue,
+    IdentifierValue,
+    LanguageTagValue,
+    Reference,
+    Statement,
+    TextValue,
 )
 from onomasticon.sources.records import SourceRecord
 
@@ -61,7 +70,13 @@ class SourceRecordRepository:
         if record.note is not None:
             lines.append(f"note = {_quote_string(record.note)}")
         lines.extend(_dump_identifiers(record.identifiers))
-        lines.extend(_dump_statements(record.statements))
+        lines.extend(
+            _dump_source_statements(
+                record.statements,
+                source=record.source,
+                record_id=record.record_id,
+            )
+        )
         return "\n".join(lines) + "\n"
 
     def dump(
@@ -113,6 +128,108 @@ def _source_record_from_mapping(data: dict[str, object]) -> SourceRecord:
         record_id=_require_string(data, "record_id"),
         entity_type=entity_type,
         identifiers=_parse_identifiers(data.get("identifiers")),
-        statements=_parse_statements(data.get("statements")),
+        statements=_parse_source_statements(
+            data.get("statements"),
+            source=_require_string(data, "source"),
+            record_id=_require_string(data, "record_id"),
+        ),
         note=_optional_string(data, "note"),
     )
+
+
+def _parse_source_statements(
+    raw: object,
+    *,
+    source: str,
+    record_id: str,
+) -> tuple[Statement, ...]:
+    statements = _parse_statements(raw)
+    normalized: list[Statement] = []
+    for statement in statements:
+        references = tuple(
+            _normalize_reference(reference, source=source, record_id=record_id)
+            for reference in statement.references
+        )
+        normalized.append(
+            Statement(
+                property=statement.property,
+                value=statement.value,
+                references=references,
+                note=statement.note,
+            )
+        )
+    return tuple(normalized)
+
+
+def _normalize_reference(
+    reference: Reference,
+    *,
+    source: str,
+    record_id: str,
+) -> Reference:
+    if reference.record is None and reference.source == source:
+        return Reference(
+            source=reference.source,
+            record=record_id,
+            locator=reference.locator,
+            note=reference.note,
+        )
+    return reference
+
+
+def _dump_source_statements(
+    statements: tuple[Statement, ...],
+    *,
+    source: str,
+    record_id: str,
+) -> list[str]:
+    lines: list[str] = []
+    for statement in statements:
+        lines.append("[[statements]]")
+        lines.append(f"property = {_quote_string(statement.property)}")
+        match statement.value:
+            case EntityValue(entity_id=entity_id):
+                lines.append(f"entity = {_quote_string(entity_id)}")
+            case IdentifierValue(scheme=scheme, value=value):
+                lines.append(
+                    f"identifier = {{ scheme = {_quote_string(scheme)}, value = {_quote_string(value)} }}"
+                )
+            case TextValue(text=text):
+                lines.append(f"text = {_quote_string(text)}")
+            case LanguageTagValue(language_tag=language_tag):
+                lines.append(f"lang = {_quote_string(language_tag)}")
+            case DateValue(edtf=edtf):
+                lines.append(f"date = {_quote_string(edtf)}")
+        if statement.note is not None:
+            lines.append(f"note = {_quote_string(statement.note)}")
+        if statement.references:
+            refs = ", ".join(
+                _dump_source_reference(
+                    reference,
+                    source=source,
+                    record_id=record_id,
+                )
+                for reference in statement.references
+            )
+            lines.append(f"refs = [{refs}]")
+    return lines
+
+
+def _dump_source_reference(
+    reference: Reference,
+    *,
+    source: str,
+    record_id: str,
+) -> str:
+    if (
+        reference.record == record_id
+        and reference.source == source
+        and reference.locator is not None
+    ):
+        compact = Reference(
+            source=reference.source,
+            locator=reference.locator,
+            note=reference.note,
+        )
+        return _dump_reference(compact)
+    return _dump_reference(reference)

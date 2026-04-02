@@ -150,6 +150,27 @@ def test_repository_dump_can_overwrite_explicitly(tmp_path: Path) -> None:
     assert destination.read_text() == repository.dumps(updated)
 
 
+def test_repository_can_write_and_reload_entity_file(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    entity = Person(
+        id="a1b2c3",
+        identifiers=(Identifier("wikidata", "Q12345"),),
+        statements=(
+            Statement(
+                property="creator",
+                value=EntityValue("p9x2k4"),
+                references=(Reference(source="wikidata", record="Q12345"),),
+            ),
+        ),
+    )
+
+    written_path = repository.dump(entity)
+    loaded = repository.load(written_path)
+
+    assert written_path == tmp_path / "entities" / "a1b2c3.toml"
+    assert loaded == entity
+
+
 def test_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
     entity = Person(id="a1b2c3")

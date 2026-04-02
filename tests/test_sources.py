@@ -48,12 +48,58 @@ def test_source_layout_uses_source_and_record_identifier() -> None:
     )
 
 
+def test_source_repository_can_write_and_reload_source_record(tmp_path: Path) -> None:
+    repository = SourceRecordRepository(layout=SourceLayout(root=tmp_path))
+    record = SourceRecord(
+        source="wikidata",
+        record_id="Q12345",
+        entity_type=EntityType.WORK,
+        identifiers=(Identifier("wikidata", "Q12345"),),
+        statements=(
+            Statement(
+                property="title",
+                value=TextValue("De tribulatione"),
+                references=(Reference(source="wikidata", record="Q12345"),),
+            ),
+        ),
+    )
+
+    written_path = repository.dump(record)
+    loaded = repository.load(written_path)
+
+    assert written_path == tmp_path / "sources" / "wikidata" / "Q12345.toml"
+    assert loaded == record
+
+
+def test_source_repository_omits_redundant_record_identifier_in_references() -> None:
+    repository = SourceRecordRepository(layout=SourceLayout(root=Path("/repo")))
+    record = SourceRecord(
+        source="wikidata",
+        record_id="Q12345",
+        statements=(
+            Statement(
+                property="title",
+                value=TextValue("De tribulatione"),
+                references=(
+                    Reference(source="wikidata", record="Q12345", locator="P1476"),
+                ),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(record)
+    reparsed = repository.loads(serialized)
+
+    assert 'record = "Q12345"' not in serialized
+    assert reparsed.statements[0].references[0].record == "Q12345"
+
+
 def test_source_repository_rejects_bad_statement_shapes() -> None:
     repository = SourceRecordRepository(layout=SourceLayout(root=Path("/repo")))
 
     with pytest.raises(EntityValidationError, match="exactly one value field"):
         repository.loads(
-            'source = "wikidata"\nrecord_id = "Q12345"\n[[statements]]\nprop = "creator"\ntext = "A"\nlang = "la"\n'
+            'source = "wikidata"\nrecord_id = "Q12345"\n[[statements]]\nproperty = "creator"\ntext = "A"\nlang = "la"\n'
         )
 
 
