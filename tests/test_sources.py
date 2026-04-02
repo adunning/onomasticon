@@ -7,8 +7,6 @@ import pytest
 from onomasticon.core.appellations import (
     Appellation,
     AppellationKind,
-    AppellationPart,
-    AppellationPartKind,
 )
 from onomasticon.core.entities import (
     EntityType,
@@ -42,11 +40,7 @@ def test_source_record_round_trips_through_toml() -> None:
         appellations=(
             Appellation(
                 kind=AppellationKind.TITLE,
-                parts=(
-                    AppellationPart(
-                        kind=AppellationPartKind.GENERIC, value="De tribulatione"
-                    ),
-                ),
+                display_value="De tribulatione",
                 language="la",
             ),
         ),

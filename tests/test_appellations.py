@@ -14,13 +14,13 @@ from onomasticon.core.statements import Certainty, Reference, StatementStatus
 def test_appellation_normalizes_kind_and_language() -> None:
     appellation = Appellation(
         kind="title",
-        parts=(AppellationPart(kind="generic", value="De tribulatione"),),
+        display_value="De tribulatione",
         language="la",
     )
 
     assert appellation.kind is AppellationKind.TITLE
     assert appellation.language == "la"
-    assert appellation.parts[0].kind is AppellationPartKind.GENERIC
+    assert appellation.display_value == "De tribulatione"
 
 
 def test_appellation_can_carry_provenance_and_editorial_metadata() -> None:

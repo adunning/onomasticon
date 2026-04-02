@@ -116,8 +116,9 @@ def test_entity_can_carry_appellations() -> None:
             Appellation(
                 kind=AppellationKind.PREFERRED,
                 parts=(
+                    AppellationPart(kind=AppellationPartKind.BYNAME, value="Pseudo"),
                     AppellationPart(
-                        kind=AppellationPartKind.GENERIC, value="Pseudo-Dionysius"
+                        kind=AppellationPartKind.HONORIFIC, value="Dionysius"
                     ),
                 ),
                 language="en",
@@ -125,4 +126,4 @@ def test_entity_can_carry_appellations() -> None:
         ),
     )
 
-    assert entity.appellations[0].parts[0].value == "Pseudo-Dionysius"
+    assert entity.appellations[0].parts[0].value == "Pseudo"

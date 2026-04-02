@@ -19,6 +19,7 @@ class AppellationKind(StrEnum):
     ATTESTED = "attested"
     TITLE = "title"
     INCIPIT = "incipit"
+    EXPLICIT = "explicit"
     DESCRIPTIVE = "descriptive"
     EDITORIAL = "editorial"
     SHORT = "short"
@@ -35,7 +36,6 @@ class AppellationPartKind(StrEnum):
     PATRONYMIC = "patronymic"
     ORDINAL = "ordinal"
     HONORIFIC = "honorific"
-    GENERIC = "generic"
 
 
 @dataclass(slots=True, frozen=True)
