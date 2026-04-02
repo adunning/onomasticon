@@ -169,6 +169,35 @@ def test_repository_round_trips_place_coordinates() -> None:
     assert reparsed == place
 
 
+def test_repository_round_trips_organization_location_and_dates() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    entity = Organization(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.LOCATION,
+                value=EntityValue("b1c2d3"),
+            ),
+            Statement(
+                property=StatementProperty.FOUNDATION,
+                value=DateValue(TemporalValue("1140")),
+            ),
+            Statement(
+                property=StatementProperty.DISSOLUTION,
+                value=DateValue(TemporalValue("1539")),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(entity)
+    reparsed = repository.loads(serialized)
+
+    assert 'property = "location"' in serialized
+    assert 'property = "foundation"' in serialized
+    assert 'property = "dissolution"' in serialized
+    assert reparsed == entity
+
+
 def test_repository_round_trips_temporal_values() -> None:
     repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
     entity = Work(
@@ -683,6 +712,44 @@ def test_repository_rejects_properties_not_allowed_on_type() -> None:
         repository.loads(
             'id = "a1b2c3"\ntype = "person"\n[[statements]]\nproperty = "inception"\ndate = "1245"\n'
         )
+
+
+def test_repository_rejects_location_when_target_is_not_a_place(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Person(id="b1c2d3"))
+    entity = Organization(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.LOCATION,
+                value=EntityValue("b1c2d3"),
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        EntityValidationError,
+        match=r"Property 'location' on entity a1b2c3 must point to one of \[country, place\], not 'person'",
+    ):
+        repository.dump(entity)
+
+
+def test_repository_accepts_location_when_target_is_a_place(tmp_path: Path) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=tmp_path))
+    repository.dump(Place(id="b1c2d3"))
+    entity = Organization(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.LOCATION,
+                value=EntityValue("b1c2d3"),
+            ),
+        ),
+    )
+
+    written_path = repository.dump(entity)
+
+    assert repository.load(written_path) == entity
 
 
 def test_repository_round_trips_person_relationship_properties() -> None:

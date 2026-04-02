@@ -63,6 +63,28 @@ def test_organization_is_a_first_class_entity() -> None:
     assert isinstance(entity, Organization)
 
 
+def test_organization_accepts_location_foundation_and_dissolution() -> None:
+    entity = Organization(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.LOCATION,
+                value=EntityValue("b1c2d3"),
+            ),
+            Statement(
+                property=StatementProperty.FOUNDATION,
+                value=DateValue(TemporalValue("1140")),
+            ),
+            Statement(
+                property=StatementProperty.DISSOLUTION,
+                value=DateValue(TemporalValue("1539")),
+            ),
+        ),
+    )
+
+    assert len(entity.statements) == 3
+
+
 def test_place_and_organization_can_carry_subtypes() -> None:
     place = Place(id="a1b2c3", subtype=PlaceSubtype.COUNTRY)
     organization = Organization(

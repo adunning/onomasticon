@@ -14,14 +14,17 @@ class StatementProperty(StrEnum):
     COORDINATES = "coordinates"
     DEATH = "death"
     FLORUIT = "floruit"
+    FOUNDATION = "foundation"
     INCEPTION = "inception"
     LANGUAGE = "language"
+    LOCATION = "location"
     NATIONALITY = "nationality"
     RELIGIOUS_ORDER = "religious_order"
     SAME_AS = "same_as"
     SEX = "sex"
     TITLE = "title"
     TRANSLATOR = "translator"
+    DISSOLUTION = "dissolution"
 
 
 _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
@@ -32,9 +35,12 @@ _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
     StatementProperty.BIRTH: frozenset({"person"}),
     StatementProperty.COORDINATES: frozenset({"place"}),
     StatementProperty.DEATH: frozenset({"person"}),
+    StatementProperty.DISSOLUTION: frozenset({"organization"}),
     StatementProperty.FLORUIT: frozenset({"person"}),
+    StatementProperty.FOUNDATION: frozenset({"organization"}),
     StatementProperty.INCEPTION: frozenset({"organization", "place", "manifestation"}),
     StatementProperty.LANGUAGE: frozenset({"work", "expression"}),
+    StatementProperty.LOCATION: frozenset({"organization"}),
     StatementProperty.NATIONALITY: frozenset({"person"}),
     StatementProperty.RELIGIOUS_ORDER: frozenset({"person"}),
     StatementProperty.SAME_AS: frozenset(
@@ -62,6 +68,7 @@ _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
 
 _ENTITY_REFERENCE_TARGETS: dict[StatementProperty, frozenset[str]] = {
     StatementProperty.AUTHOR: frozenset({"person"}),
+    StatementProperty.LOCATION: frozenset({"place", "country"}),
     StatementProperty.NATIONALITY: frozenset({"country"}),
     StatementProperty.RELIGIOUS_ORDER: frozenset({"religious_order"}),
     StatementProperty.TRANSLATOR: frozenset({"person"}),

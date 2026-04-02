@@ -20,6 +20,7 @@ from onomasticon.core.statements import (
     Ascription,
     AscriptionValue,
     Certainty,
+    EntityValue,
     CoordinateValue,
     DateValue,
     IdentifierValue,
@@ -206,6 +207,37 @@ def test_source_repository_round_trips_coordinate_values() -> None:
     reparsed = repository.loads(serialized)
 
     assert "coordinates = { latitude = 51.5074, longitude = -0.1278 }" in serialized
+    assert reparsed == record
+
+
+def test_source_repository_round_trips_organization_location_and_dates() -> None:
+    repository = SourceRecordRepository(layout=SourceLayout(root=Path("/repo")))
+    record = SourceRecord(
+        source="wikidata",
+        record_id="Q12345",
+        entity_type=EntityType.ORGANIZATION,
+        statements=(
+            Statement(
+                property=StatementProperty.LOCATION,
+                value=EntityValue("a1b2c3"),
+            ),
+            Statement(
+                property=StatementProperty.FOUNDATION,
+                value=DateValue(TemporalValue("1140")),
+            ),
+            Statement(
+                property=StatementProperty.DISSOLUTION,
+                value=DateValue(TemporalValue("1539")),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(record)
+    reparsed = repository.loads(serialized)
+
+    assert 'property = "location"' in serialized
+    assert 'property = "foundation"' in serialized
+    assert 'property = "dissolution"' in serialized
     assert reparsed == record
 
 
