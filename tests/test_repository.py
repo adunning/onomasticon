@@ -14,7 +14,8 @@ from onomasticon.core.repository import (
     IdentifierCollisionError,
     RepositoryLayout,
 )
-from onomasticon.core.statements import EntityValue, Reference, Statement
+from onomasticon.core.statements import DateValue, EntityValue, Reference, Statement
+from onomasticon.core.temporal import TemporalValue
 
 
 def test_entity_round_trips_through_toml() -> None:
@@ -79,6 +80,44 @@ def test_repository_rejects_invalid_toml_shapes(content: str, message: str) -> N
 
     with pytest.raises(EntityValidationError, match=message):
         repository.loads(content)
+
+
+def test_repository_round_trips_temporal_values() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    entity = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property="composition",
+                value=DateValue(TemporalValue("2024~", label="circa 2024")),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(entity)
+    reparsed = repository.loads(serialized)
+
+    assert 'date = { edtf = "2024~", label = "circa 2024" }' in serialized
+    assert reparsed == entity
+
+
+def test_repository_round_trips_temporal_intervals() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    entity = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property="floruit",
+                value=DateValue(TemporalValue("123X/1245")),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(entity)
+    reparsed = repository.loads(serialized)
+
+    assert 'date = "123X/1245"' in serialized
+    assert reparsed == entity
 
 
 @pytest.mark.parametrize(
@@ -179,3 +218,30 @@ def test_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> None:
         EntityWriteError, match="must be written to a file named a1b2c3.toml"
     ):
         repository.dump(entity, path=tmp_path / "entities" / "wrong.toml")
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (
+            'id = "a1b2c3"\n[[statements]]\nproperty = "floruit"\ndate = { label = "no edtf" }\n',
+            "edtf must be a non-empty string",
+        ),
+        (
+            'id = "a1b2c3"\n[[statements]]\nproperty = "floruit"\ndate = { edtf = 42 }\n',
+            "edtf must be a non-empty string",
+        ),
+        (
+            'id = "a1b2c3"\n[[statements]]\nproperty = "floruit"\ndate = { edtf = "2024", extra = "x" }\n',
+            "Unexpected temporal value fields: extra",
+        ),
+    ],
+)
+def test_repository_rejects_invalid_temporal_value_shapes(
+    content: str,
+    message: str,
+) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    with pytest.raises(EntityValidationError, match=message):
+        repository.loads(content)

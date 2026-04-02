@@ -12,7 +12,9 @@ license = "MIT"
 authors = [
     { name = "Andrew Dunning" },
 ]
-dependencies = []
+dependencies = [
+    "edtf>=5.0.1",
+]
 
 
 [project.urls]

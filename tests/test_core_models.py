@@ -10,6 +10,7 @@ from onomasticon.core import (
     IdentifierCollisionError,
     Organization,
     RepositoryLayout,
+    TemporalValue,
 )
 
 
@@ -23,3 +24,4 @@ def test_core_exports_minimal_entity_baseline() -> None:
     assert IdentifierCollisionError is not None
     assert Organization is not None
     assert RepositoryLayout is not None
+    assert TemporalValue is not None

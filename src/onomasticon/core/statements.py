@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from onomasticon.core.identifiers import Identifier
 from onomasticon.core.local_ids import validate_local_identifier
+from onomasticon.core.temporal import TemporalValue
 from onomasticon.core.validation import require_non_empty_string
 
 
@@ -42,12 +44,7 @@ class EntityValue:
 class IdentifierValue:
     """A statement value carrying an external identifier."""
 
-    scheme: str
-    value: str
-
-    def __post_init__(self) -> None:
-        require_non_empty_string(self.scheme, field_name="scheme")
-        require_non_empty_string(self.value, field_name="value")
+    identifier: Identifier
 
 
 @dataclass(slots=True, frozen=True)
@@ -72,12 +69,9 @@ class LanguageTagValue:
 
 @dataclass(slots=True, frozen=True)
 class DateValue:
-    """A statement value carrying an EDTF-compatible date string."""
+    """A statement value carrying an EDTF-compatible temporal value."""
 
-    edtf: str
-
-    def __post_init__(self) -> None:
-        require_non_empty_string(self.edtf, field_name="edtf")
+    temporal: TemporalValue
 
 
 type StatementValue = (

@@ -34,6 +34,7 @@ from onomasticon.core.statements import (
     StatementValue,
     TextValue,
 )
+from onomasticon.core.temporal import TemporalValue
 
 __all__ = [
     "AnyEntity",
@@ -60,6 +61,7 @@ __all__ = [
     "RepositoryLayout",
     "Statement",
     "StatementValue",
+    "TemporalValue",
     "TextValue",
     "Work",
     "validate_local_identifier",

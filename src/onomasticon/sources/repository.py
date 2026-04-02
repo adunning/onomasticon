@@ -190,16 +190,23 @@ def _dump_source_statements(
         match statement.value:
             case EntityValue(entity_id=entity_id):
                 lines.append(f"entity = {_quote_string(entity_id)}")
-            case IdentifierValue(scheme=scheme, value=value):
+            case IdentifierValue(identifier=identifier):
                 lines.append(
-                    f"identifier = {{ scheme = {_quote_string(scheme)}, value = {_quote_string(value)} }}"
+                    "identifier = "
+                    f"{{ scheme = {_quote_string(identifier.scheme)}, value = {_quote_string(identifier.value)} }}"
                 )
             case TextValue(text=text):
                 lines.append(f"text = {_quote_string(text)}")
             case LanguageTagValue(language_tag=language_tag):
                 lines.append(f"lang = {_quote_string(language_tag)}")
-            case DateValue(edtf=edtf):
-                lines.append(f"date = {_quote_string(edtf)}")
+            case DateValue(temporal=temporal):
+                if temporal.label is None:
+                    lines.append(f"date = {_quote_string(temporal.edtf)}")
+                else:
+                    lines.append(
+                        "date = "
+                        f"{{ edtf = {_quote_string(temporal.edtf)}, label = {_quote_string(temporal.label)} }}"
+                    )
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
         if statement.references:

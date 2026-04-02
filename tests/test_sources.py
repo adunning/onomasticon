@@ -7,7 +7,14 @@ import pytest
 from onomasticon.core.entities import EntityType
 from onomasticon.core.identifiers import Identifier
 from onomasticon.core.repository import EntityValidationError, EntityWriteError
-from onomasticon.core.statements import IdentifierValue, Reference, Statement, TextValue
+from onomasticon.core.statements import (
+    DateValue,
+    IdentifierValue,
+    Reference,
+    Statement,
+    TextValue,
+)
+from onomasticon.core.temporal import TemporalValue
 from onomasticon.sources import SourceLayout, SourceRecord, SourceRecordRepository
 
 
@@ -28,7 +35,7 @@ def test_source_record_round_trips_through_toml() -> None:
             ),
             Statement(
                 property="same_as",
-                value=IdentifierValue("wikidata", "Q12345"),
+                value=IdentifierValue(Identifier("wikidata", "Q12345")),
             ),
         ),
         note="Normalized cache record.",
@@ -92,6 +99,46 @@ def test_source_repository_omits_redundant_record_identifier_in_references() -> 
 
     assert 'record = "Q12345"' not in serialized
     assert reparsed.statements[0].references[0].record == "Q12345"
+
+
+def test_source_repository_round_trips_temporal_value_tables() -> None:
+    repository = SourceRecordRepository(layout=SourceLayout(root=Path("/repo")))
+    record = SourceRecord(
+        source="wikidata",
+        record_id="Q12345",
+        statements=(
+            Statement(
+                property="inception",
+                value=DateValue(TemporalValue("2024", label="year only")),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(record)
+    reparsed = repository.loads(serialized)
+
+    assert 'date = { edtf = "2024", label = "year only" }' in serialized
+    assert reparsed == record
+
+
+def test_source_repository_round_trips_temporal_intervals() -> None:
+    repository = SourceRecordRepository(layout=SourceLayout(root=Path("/repo")))
+    record = SourceRecord(
+        source="wikidata",
+        record_id="Q12345",
+        statements=(
+            Statement(
+                property="floruit",
+                value=DateValue(TemporalValue("123X/1245")),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(record)
+    reparsed = repository.loads(serialized)
+
+    assert 'date = "123X/1245"' in serialized
+    assert reparsed == record
 
 
 def test_source_repository_rejects_bad_statement_shapes() -> None:

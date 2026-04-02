@@ -30,6 +30,7 @@ from onomasticon.core.statements import (
     Statement,
     TextValue,
 )
+from onomasticon.core.temporal import TemporalValue
 from onomasticon.core.validation import (
     optional_string,
     require_list,
@@ -279,15 +280,18 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         case "identifier":
             identifier = _require_table(raw_value)
             value = IdentifierValue(
-                scheme=_require_string(identifier, "scheme"),
-                value=_require_string(identifier, "value"),
+                Identifier(
+                    scheme=_require_string(identifier, "scheme"),
+                    value=_require_string(identifier, "value"),
+                    note=_optional_string(identifier, "note"),
+                )
             )
         case "text":
             value = TextValue(_require_raw_string(raw_value, field_name="text"))
         case "lang":
             value = LanguageTagValue(_require_raw_string(raw_value, field_name="lang"))
         case "date":
-            value = DateValue(_require_raw_string(raw_value, field_name="date"))
+            value = DateValue(_parse_temporal_value(raw_value))
         case _:
             raise AssertionError(value_key)
     return Statement(
@@ -330,16 +334,14 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
         match statement.value:
             case EntityValue(entity_id=entity_id):
                 lines.append(f"entity = {_quote_string(entity_id)}")
-            case IdentifierValue(scheme=scheme, value=value):
-                lines.append(
-                    f"identifier = {{ scheme = {_quote_string(scheme)}, value = {_quote_string(value)} }}"
-                )
+            case IdentifierValue(identifier=identifier):
+                lines.append(f"identifier = {_dump_inline_identifier(identifier)}")
             case TextValue(text=text):
                 lines.append(f"text = {_quote_string(text)}")
             case LanguageTagValue(language_tag=language_tag):
                 lines.append(f"lang = {_quote_string(language_tag)}")
-            case DateValue(edtf=edtf):
-                lines.append(f"date = {_quote_string(edtf)}")
+            case DateValue(temporal=temporal):
+                lines.append(f"date = {_dump_temporal_value(temporal)}")
         if statement.note is not None:
             lines.append(f"note = {_quote_string(statement.note)}")
         if statement.references:
@@ -369,6 +371,40 @@ def _dump_reference(reference: Reference) -> str:
         parts.append(f"locator = {_quote_string(reference.locator)}")
     if reference.note is not None:
         parts.append(f"note = {_quote_string(reference.note)}")
+    return "{ " + ", ".join(parts) + " }"
+
+
+def _parse_temporal_value(raw: object) -> TemporalValue:
+    if isinstance(raw, str):
+        return TemporalValue(raw)
+    data = _require_table(raw)
+    allowed_keys = {"edtf", "label"}
+    extra_keys = set(data) - allowed_keys
+    if extra_keys:
+        extras = ", ".join(sorted(extra_keys))
+        msg = f"Unexpected temporal value fields: {extras}."
+        raise EntityValidationError(msg)
+    return TemporalValue(
+        edtf=_require_string(data, "edtf"),
+        label=_optional_string(data, "label"),
+    )
+
+
+def _dump_temporal_value(temporal: TemporalValue) -> str:
+    if temporal.label is None:
+        return _quote_string(temporal.edtf)
+    parts = [f"edtf = {_quote_string(temporal.edtf)}"]
+    parts.append(f"label = {_quote_string(temporal.label)}")
+    return "{ " + ", ".join(parts) + " }"
+
+
+def _dump_inline_identifier(identifier: Identifier) -> str:
+    parts = [
+        f"scheme = {_quote_string(identifier.scheme)}",
+        f"value = {_quote_string(identifier.value)}",
+    ]
+    if identifier.note is not None:
+        parts.append(f"note = {_quote_string(identifier.note)}")
     return "{ " + ", ".join(parts) + " }"
 
 
