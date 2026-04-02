@@ -304,3 +304,32 @@ def test_repository_rejects_properties_not_allowed_on_entity_type() -> None:
         repository.loads(
             'id = "a1b2c3"\nentity_type = "person"\n[[statements]]\nproperty = "inception"\ndate = "1245"\n'
         )
+
+
+def test_repository_round_trips_person_relationship_properties() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    entity = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.NATIONALITY,
+                value=EntityValue("b1c2d3"),
+            ),
+            Statement(
+                property=StatementProperty.RELIGIOUS_ORDER,
+                value=EntityValue("c2d3e4"),
+            ),
+            Statement(
+                property=StatementProperty.SEX,
+                value=EntityValue("d3e4f5"),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(entity)
+    reparsed = repository.loads(serialized)
+
+    assert 'property = "nationality"' in serialized
+    assert 'property = "religious_order"' in serialized
+    assert 'property = "sex"' in serialized
+    assert reparsed == entity

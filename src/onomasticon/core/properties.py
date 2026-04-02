@@ -16,7 +16,10 @@ class StatementProperty(StrEnum):
     FLORUIT = "floruit"
     INCEPTION = "inception"
     LANGUAGE = "language"
+    NATIONALITY = "nationality"
+    RELIGIOUS_ORDER = "religious_order"
     SAME_AS = "same_as"
+    SEX = "sex"
     TITLE = "title"
     TRANSLATOR = "translator"
 
@@ -39,6 +42,8 @@ _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
     StatementProperty.FLORUIT: frozenset({"person"}),
     StatementProperty.INCEPTION: frozenset({"organization", "place", "manifestation"}),
     StatementProperty.LANGUAGE: frozenset({"work", "expression"}),
+    StatementProperty.NATIONALITY: frozenset({"person"}),
+    StatementProperty.RELIGIOUS_ORDER: frozenset({"person"}),
     StatementProperty.SAME_AS: frozenset(
         {
             "person",
@@ -50,6 +55,7 @@ _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
             "item",
         }
     ),
+    StatementProperty.SEX: frozenset({"person"}),
     StatementProperty.TITLE: frozenset(
         {
             "work",

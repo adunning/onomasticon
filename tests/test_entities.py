@@ -6,7 +6,7 @@ import pytest
 
 from onomasticon.core.entities import Entity, Organization, Person
 from onomasticon.core.properties import StatementProperty
-from onomasticon.core.statements import DateValue, Statement
+from onomasticon.core.statements import DateValue, EntityValue, Statement
 from onomasticon.core.temporal import TemporalValue
 
 
@@ -60,3 +60,25 @@ def test_person_rejects_inapplicable_statement_properties() -> None:
                 ),
             ),
         )
+
+
+def test_person_accepts_person_specific_relationship_properties() -> None:
+    person = Person(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.NATIONALITY,
+                value=EntityValue("b1c2d3"),
+            ),
+            Statement(
+                property=StatementProperty.RELIGIOUS_ORDER,
+                value=EntityValue("c2d3e4"),
+            ),
+            Statement(
+                property=StatementProperty.SEX,
+                value=EntityValue("d3e4f5"),
+            ),
+        ),
+    )
+
+    assert len(person.statements) == 3
