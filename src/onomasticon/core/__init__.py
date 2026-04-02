@@ -1,6 +1,14 @@
 """Canonical core models for Onomasticon."""
 
 from onomasticon.core.appellations import Appellation, AppellationKind
+from onomasticon.core.documentary import (
+    AnyDocumentaryUnit,
+    Component,
+    ContentItem,
+    DocumentaryType,
+    Holding,
+    documentary_type_for_unit,
+)
 from onomasticon.core.entities import (
     AnyEntity,
     Entity,
@@ -22,6 +30,7 @@ from onomasticon.core.local_ids import (
 )
 from onomasticon.core.properties import (
     StatementProperty,
+    property_allowed_for_documentary_type,
     property_allowed_for_entity_type,
 )
 from onomasticon.core.repository import EntityRepository, RepositoryLayout
@@ -56,11 +65,15 @@ __all__ = [
     "Appellation",
     "AppellationKind",
     "AnyEntity",
+    "AnyDocumentaryUnit",
     "Ascription",
     "AscriptionValue",
     "Certainty",
+    "Component",
+    "ContentItem",
     "CoordinateValue",
     "DateValue",
+    "DocumentaryType",
     "Entity",
     "EntityRepository",
     "EntityValue",
@@ -74,6 +87,7 @@ __all__ = [
     "Item",
     "LanguageTagValue",
     "LOCAL_IDENTIFIER_LENGTH",
+    "Holding",
     "Manifestation",
     "Organization",
     "OrganizationSubtype",
@@ -94,6 +108,8 @@ __all__ = [
     "TemporalValue",
     "TextValue",
     "Work",
+    "documentary_type_for_unit",
+    "property_allowed_for_documentary_type",
     "property_allowed_for_entity_type",
     "validate_local_identifier",
 ]

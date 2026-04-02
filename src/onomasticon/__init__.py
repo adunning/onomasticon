@@ -2,6 +2,12 @@
 
 from onomasticon.app import OnomasticonApp
 from onomasticon.core.appellations import Appellation, AppellationKind
+from onomasticon.core.documentary import (
+    Component,
+    ContentItem,
+    DocumentaryType,
+    Holding,
+)
 from onomasticon.core.entities import (
     AnyEntity,
     Entity,
@@ -12,6 +18,7 @@ from onomasticon.core.entities import (
 )
 from onomasticon.core.properties import (
     StatementProperty,
+    property_allowed_for_documentary_type,
     property_allowed_for_entity_type,
 )
 from onomasticon.core.statements import (
@@ -33,18 +40,25 @@ from onomasticon.core.repository import (
     RepositoryError,
     RepositoryLayout,
 )
+from onomasticon.documentary import DocumentaryLayout, DocumentaryRepository
 
 __all__ = [
     "Appellation",
     "AppellationKind",
     "AnyEntity",
     "Certainty",
+    "Component",
+    "ContentItem",
+    "DocumentaryLayout",
+    "DocumentaryRepository",
+    "DocumentaryType",
     "Entity",
     "EntityRepository",
     "EntityValidationError",
     "EntityWriteError",
     "EntityType",
     "IdentifierCollisionError",
+    "Holding",
     "OnomasticonApp",
     "Organization",
     "OrganizationSubtype",
@@ -60,5 +74,6 @@ __all__ = [
     "StatementProperty",
     "StatementStatus",
     "TemporalValue",
+    "property_allowed_for_documentary_type",
     "property_allowed_for_entity_type",
 ]
