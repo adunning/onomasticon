@@ -1,4 +1,4 @@
-"""TOML-backed persistence for normalized source records."""
+"""Default TOML adapter for normalized source records."""
 
 from __future__ import annotations
 

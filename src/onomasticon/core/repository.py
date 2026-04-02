@@ -1,4 +1,4 @@
-"""TOML-backed persistence for canonical entities."""
+"""Default TOML adapter for canonical entities."""
 
 from __future__ import annotations
 

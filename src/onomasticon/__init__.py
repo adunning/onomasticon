@@ -16,6 +16,11 @@ from onomasticon.core.entities import (
     OrganizationSubtype,
     PlaceSubtype,
 )
+from onomasticon.core.ports import (
+    DocumentaryStore,
+    EntityStore,
+    SourceRecordStore,
+)
 from onomasticon.core.properties import (
     StatementProperty,
     property_allowed_for_documentary_type,
@@ -52,8 +57,10 @@ __all__ = [
     "DocumentaryLayout",
     "DocumentaryRepository",
     "DocumentaryType",
+    "DocumentaryStore",
     "Entity",
     "EntityRepository",
+    "EntityStore",
     "EntityValidationError",
     "EntityWriteError",
     "EntityType",
@@ -70,6 +77,7 @@ __all__ = [
     "RepositoryError",
     "RepositoryLayout",
     "Sex",
+    "SourceRecordStore",
     "Statement",
     "StatementProperty",
     "StatementStatus",

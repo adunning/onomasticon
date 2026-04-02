@@ -1,4 +1,4 @@
-"""TOML-backed persistence for documentary units."""
+"""Default TOML adapter for documentary units."""
 
 from __future__ import annotations
 

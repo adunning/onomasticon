@@ -13,16 +13,16 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the top-level command-line parser."""
     parser = argparse.ArgumentParser(
         prog="onomasticon",
-        description="Maintain a Git-backed scholarly entity repository.",
+        description="Work with the Onomasticon scholarly model through local storage adapters.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     validate_parser = subparsers.add_parser(
         "validate",
-        help="Validate one entity TOML file.",
+        help="Validate one canonical entity record file.",
     )
     validate_parser.add_argument(
-        "path", type=Path, help="Path to the entity TOML file."
+        "path", type=Path, help="Path to the canonical entity record file."
     )
 
     return parser

@@ -33,6 +33,14 @@ from onomasticon.core.properties import (
     property_allowed_for_documentary_type,
     property_allowed_for_entity_type,
 )
+from onomasticon.core.ports import (
+    DocumentaryCodec,
+    DocumentaryStore,
+    EntityCodec,
+    EntityStore,
+    SourceRecordCodec,
+    SourceRecordStore,
+)
 from onomasticon.core.repository import EntityRepository, RepositoryLayout
 from onomasticon.core.repository import (
     EntityValidationError,
@@ -74,8 +82,12 @@ __all__ = [
     "CoordinateValue",
     "DateValue",
     "DocumentaryType",
+    "DocumentaryCodec",
+    "DocumentaryStore",
     "Entity",
+    "EntityCodec",
     "EntityRepository",
+    "EntityStore",
     "EntityValue",
     "EntityValidationError",
     "EntityWriteError",
@@ -101,6 +113,8 @@ __all__ = [
     "RepositoryLayout",
     "Sex",
     "SexValue",
+    "SourceRecordCodec",
+    "SourceRecordStore",
     "Statement",
     "StatementProperty",
     "StatementStatus",
