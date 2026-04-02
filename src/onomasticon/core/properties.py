@@ -11,6 +11,7 @@ class StatementProperty(StrEnum):
     ATTESTED = "attested"
     AUTHOR = "author"
     BIRTH = "birth"
+    COORDINATES = "coordinates"
     DEATH = "death"
     FLORUIT = "floruit"
     INCEPTION = "inception"
@@ -29,6 +30,7 @@ _PROPERTY_APPLICABILITY: dict[StatementProperty, frozenset[str]] = {
     ),
     StatementProperty.AUTHOR: frozenset({"work", "expression"}),
     StatementProperty.BIRTH: frozenset({"person"}),
+    StatementProperty.COORDINATES: frozenset({"place"}),
     StatementProperty.DEATH: frozenset({"person"}),
     StatementProperty.FLORUIT: frozenset({"person"}),
     StatementProperty.INCEPTION: frozenset({"organization", "place", "manifestation"}),

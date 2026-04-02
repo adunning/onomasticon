@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import pytest
 
 from onomasticon.core.identifiers import Identifier
@@ -8,6 +9,7 @@ from onomasticon.core.statements import (
     Ascription,
     AscriptionValue,
     Certainty,
+    CoordinateValue,
     DateValue,
     EntityValue,
     IdentifierValue,
@@ -65,6 +67,10 @@ def test_statement_can_carry_ascription_qualifiers() -> None:
         (StatementProperty.LANGUAGE, LanguageTagValue("la")),
         (StatementProperty.BIRTH, DateValue(TemporalValue("2024"))),
         (
+            StatementProperty.COORDINATES,
+            CoordinateValue(latitude=51.5074, longitude=-0.1278),
+        ),
+        (
             StatementProperty.SAME_AS,
             IdentifierValue(Identifier("wikidata", "Q12345")),
         ),
@@ -89,6 +95,46 @@ def test_language_tag_value_normalizes_and_labels_tags() -> None:
 def test_language_tag_value_rejects_invalid_tags() -> None:
     with pytest.raises(ValueError, match="valid BCP 47 language tag"):
         LanguageTagValue("123")
+
+
+def test_coordinate_value_accepts_valid_coordinates() -> None:
+    value = CoordinateValue(latitude=51.5074, longitude=-0.1278)
+
+    assert value.latitude == 51.5074
+    assert value.longitude == -0.1278
+
+
+@pytest.mark.parametrize(
+    ("latitude", "longitude", "message"),
+    [
+        (91.0, 0.0, "latitude must be between -90 and 90"),
+        (-91.0, 0.0, "latitude must be between -90 and 90"),
+        (0.0, 181.0, "longitude must be between -180 and 180"),
+        (0.0, -181.0, "longitude must be between -180 and 180"),
+    ],
+)
+def test_coordinate_value_rejects_invalid_coordinates(
+    latitude: float,
+    longitude: float,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        CoordinateValue(latitude=latitude, longitude=longitude)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"latitude": "north", "longitude": 0.0}, "latitude must be a number"),
+        ({"latitude": 0.0, "longitude": "east"}, "longitude must be a number"),
+    ],
+)
+def test_coordinate_value_rejects_non_numeric_coordinates(
+    kwargs: dict[str, Any],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        CoordinateValue(**kwargs)
 
 
 def test_entity_value_rejects_non_local_identifier_shapes() -> None:

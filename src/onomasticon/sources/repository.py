@@ -27,6 +27,7 @@ from onomasticon.core.repository import (
 )
 from onomasticon.core.statements import (
     AscriptionValue,
+    CoordinateValue,
     DateValue,
     EntityValue,
     IdentifierValue,
@@ -224,6 +225,11 @@ def _dump_source_statements(
                         "date = "
                         f"{{ edtf = {_quote_string(temporal.edtf)}, label = {_quote_string(temporal.label)} }}"
                     )
+            case CoordinateValue(latitude=latitude, longitude=longitude):
+                lines.append(
+                    "coordinates = "
+                    f"{{ latitude = {latitude}, longitude = {longitude} }}"
+                )
             case SexValue(sex=sex):
                 lines.append(f"sex = {_quote_string(sex.value)}")
             case AscriptionValue(ascription=ascription):
@@ -295,6 +301,10 @@ def _dump_source_qualifier(qualifier: Qualifier) -> str:
                     "date = "
                     f"{{ edtf = {_quote_string(temporal.edtf)}, label = {_quote_string(temporal.label)} }}"
                 )
+        case CoordinateValue(latitude=latitude, longitude=longitude):
+            parts.append(
+                f"coordinates = {{ latitude = {latitude}, longitude = {longitude} }}"
+            )
         case SexValue(sex=sex):
             parts.append(f"sex = {_quote_string(sex.value)}")
         case AscriptionValue(ascription=ascription):

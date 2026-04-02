@@ -29,6 +29,7 @@ from onomasticon.core.properties import StatementProperty, allowed_target_entity
 from onomasticon.core.statements import (
     AscriptionValue,
     Certainty,
+    CoordinateValue,
     DateValue,
     EntityValue,
     IdentifierValue,
@@ -403,6 +404,7 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         "text",
         "lang",
         "date",
+        "coordinates",
         "sex",
         "ascription",
         "refs",
@@ -418,7 +420,16 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
         raise EntityValidationError(msg)
     value_keys = [
         key
-        for key in ("entity", "identifier", "text", "lang", "date", "sex", "ascription")
+        for key in (
+            "entity",
+            "identifier",
+            "text",
+            "lang",
+            "date",
+            "coordinates",
+            "sex",
+            "ascription",
+        )
         if key in data
     ]
     if len(value_keys) != 1:
@@ -444,6 +455,8 @@ def _statement_from_mapping(data: dict[str, object]) -> Statement:
             value = LanguageTagValue(_require_raw_string(raw_value, field_name="lang"))
         case "date":
             value = DateValue(_parse_temporal_value(raw_value))
+        case "coordinates":
+            value = _parse_coordinate_value(raw_value)
         case "sex":
             try:
                 value = SexValue(_require_raw_string(raw_value, field_name="sex"))
@@ -484,6 +497,7 @@ def _qualifier_from_mapping(data: dict[str, object]) -> Qualifier:
         "text",
         "lang",
         "date",
+        "coordinates",
         "sex",
         "ascription",
     }
@@ -494,7 +508,16 @@ def _qualifier_from_mapping(data: dict[str, object]) -> Qualifier:
         raise EntityValidationError(msg)
     value_keys = [
         key
-        for key in ("entity", "identifier", "text", "lang", "date", "sex", "ascription")
+        for key in (
+            "entity",
+            "identifier",
+            "text",
+            "lang",
+            "date",
+            "coordinates",
+            "sex",
+            "ascription",
+        )
         if key in data
     ]
     if len(value_keys) != 1:
@@ -520,6 +543,8 @@ def _qualifier_from_mapping(data: dict[str, object]) -> Qualifier:
             value = LanguageTagValue(_require_raw_string(raw_value, field_name="lang"))
         case "date":
             value = DateValue(_parse_temporal_value(raw_value))
+        case "coordinates":
+            value = _parse_coordinate_value(raw_value)
         case "sex":
             try:
                 value = SexValue(_require_raw_string(raw_value, field_name="sex"))
@@ -583,6 +608,11 @@ def _dump_statements(statements: tuple[Statement, ...]) -> list[str]:
                 lines.append(f"lang = {_quote_string(language_tag)}")
             case DateValue(temporal=temporal):
                 lines.append(f"date = {_dump_temporal_value(temporal)}")
+            case CoordinateValue(latitude=latitude, longitude=longitude):
+                lines.append(
+                    "coordinates = "
+                    f"{{ latitude = {latitude}, longitude = {longitude} }}"
+                )
             case SexValue(sex=sex):
                 lines.append(f"sex = {_quote_string(sex.value)}")
             case AscriptionValue(ascription=ascription):
@@ -674,6 +704,10 @@ def _dump_qualifier(qualifier: Qualifier) -> str:
             parts.append(f"lang = {_quote_string(language_tag)}")
         case DateValue(temporal=temporal):
             parts.append(f"date = {_dump_temporal_value(temporal)}")
+        case CoordinateValue(latitude=latitude, longitude=longitude):
+            parts.append(
+                f"coordinates = {{ latitude = {latitude}, longitude = {longitude} }}"
+            )
         case SexValue(sex=sex):
             parts.append(f"sex = {_quote_string(sex.value)}")
         case AscriptionValue(ascription=ascription):
@@ -695,6 +729,23 @@ def _parse_temporal_value(raw: object) -> TemporalValue:
         edtf=_require_string(data, "edtf"),
         label=_optional_string(data, "label"),
     )
+
+
+def _parse_coordinate_value(raw: object) -> CoordinateValue:
+    data = _require_table(raw)
+    allowed_keys = {"latitude", "longitude"}
+    extra_keys = set(data) - allowed_keys
+    if extra_keys:
+        extras = ", ".join(sorted(extra_keys))
+        msg = f"Unexpected coordinate fields: {extras}."
+        raise EntityValidationError(msg)
+    try:
+        return CoordinateValue(
+            latitude=_require_number(data.get("latitude"), field_name="latitude"),
+            longitude=_require_number(data.get("longitude"), field_name="longitude"),
+        )
+    except ValueError as exc:
+        raise EntityValidationError(str(exc)) from exc
 
 
 def _parse_statement_status(raw: object) -> StatementStatus:
@@ -772,6 +823,13 @@ def _require_raw_string(raw: object, *, field_name: str) -> str:
         return require_non_empty_string(raw, field_name=field_name)
     except ValueError as exc:
         raise EntityValidationError(str(exc)) from exc
+
+
+def _require_number(raw: object, *, field_name: str) -> float:
+    if isinstance(raw, bool) or not isinstance(raw, int | float):
+        msg = f"{field_name} must be a number."
+        raise EntityValidationError(msg)
+    return float(raw)
 
 
 def _require_list(raw: object, *, field_name: str) -> list[object]:

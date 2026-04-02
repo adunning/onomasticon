@@ -90,6 +90,29 @@ class DateValue:
     temporal: TemporalValue
 
 
+@dataclass(slots=True, frozen=True)
+class CoordinateValue:
+    """A statement value carrying one WGS84 latitude/longitude pair."""
+
+    latitude: float
+    longitude: float
+
+    def __post_init__(self) -> None:
+        latitude = _normalize_coordinate_component(self.latitude, field_name="latitude")
+        longitude = _normalize_coordinate_component(
+            self.longitude,
+            field_name="longitude",
+        )
+        if not -90.0 <= latitude <= 90.0:
+            msg = "latitude must be between -90 and 90."
+            raise ValueError(msg)
+        if not -180.0 <= longitude <= 180.0:
+            msg = "longitude must be between -180 and 180."
+            raise ValueError(msg)
+        object.__setattr__(self, "latitude", latitude)
+        object.__setattr__(self, "longitude", longitude)
+
+
 class Sex(StrEnum):
     """Controlled sex values."""
 
@@ -148,6 +171,7 @@ type StatementValue = (
     | TextValue
     | LanguageTagValue
     | DateValue
+    | CoordinateValue
     | SexValue
     | AscriptionValue
 )
@@ -213,3 +237,11 @@ class Statement:
             msg = f"Unknown statement property: {property_value}."
             raise ValueError(msg) from exc
         object.__setattr__(self, "property", normalized)
+
+
+def _normalize_coordinate_component(value: object, *, field_name: str) -> float:
+    """Return a validated coordinate component as a float."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        msg = f"{field_name} must be a number."
+        raise ValueError(msg)
+    return float(value)

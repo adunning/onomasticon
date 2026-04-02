@@ -34,6 +34,7 @@ from onomasticon.core.statements import (
     Ascription,
     AscriptionValue,
     Certainty,
+    CoordinateValue,
     DateValue,
     EntityValue,
     Qualifier,
@@ -147,6 +148,25 @@ def test_repository_round_trips_place_and_organization_subtypes() -> None:
     assert "subtype =" not in organization_serialized
     assert repository.loads(place_serialized) == place
     assert repository.loads(organization_serialized) == organization
+
+
+def test_repository_round_trips_place_coordinates() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+    place = Place(
+        id="a1b2c3",
+        statements=(
+            Statement(
+                property=StatementProperty.COORDINATES,
+                value=CoordinateValue(latitude=51.5074, longitude=-0.1278),
+            ),
+        ),
+    )
+
+    serialized = repository.dumps(place)
+    reparsed = repository.loads(serialized)
+
+    assert "coordinates = { latitude = 51.5074, longitude = -0.1278 }" in serialized
+    assert reparsed == place
 
 
 def test_repository_round_trips_temporal_values() -> None:
@@ -563,6 +583,33 @@ def test_repository_dump_rejects_mismatched_filenames(tmp_path: Path) -> None:
     ],
 )
 def test_repository_rejects_invalid_temporal_value_shapes(
+    content: str,
+    message: str,
+) -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    with pytest.raises(EntityValidationError, match=message):
+        repository.loads(content)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (
+            'id = "a1b2c3"\ntype = "place"\n[[statements]]\nproperty = "coordinates"\ncoordinates = { longitude = -0.1278 }\n',
+            "latitude must be a number",
+        ),
+        (
+            'id = "a1b2c3"\ntype = "place"\n[[statements]]\nproperty = "coordinates"\ncoordinates = { latitude = 51.5074, longitude = -181.0 }\n',
+            "longitude must be between -180 and 180",
+        ),
+        (
+            'id = "a1b2c3"\ntype = "place"\n[[statements]]\nproperty = "coordinates"\ncoordinates = { latitude = 51.5074, longitude = -0.1278, extra = 1 }\n',
+            "Unexpected coordinate fields: extra",
+        ),
+    ],
+)
+def test_repository_rejects_invalid_coordinate_shapes(
     content: str,
     message: str,
 ) -> None:
