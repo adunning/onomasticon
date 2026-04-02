@@ -29,6 +29,8 @@ class SourceRecord:
         if self.subtype is not None and self.entity_type not in {
             EntityType.PLACE,
             EntityType.ORGANIZATION,
+            EntityType.COUNTRY,
+            EntityType.RELIGIOUS_ORDER,
         }:
             msg = "Subtype is only allowed for place and organization source records."
             raise ValueError(msg)

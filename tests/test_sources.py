@@ -71,20 +71,23 @@ def test_source_repository_round_trips_subtyped_records() -> None:
     place_record = SourceRecord(
         source="wikidata",
         record_id="Q145",
-        entity_type=EntityType.PLACE,
+        entity_type=EntityType.COUNTRY,
         subtype=PlaceSubtype.COUNTRY,
     )
     organization_record = SourceRecord(
         source="wikidata",
         record_id="Q123",
-        entity_type=EntityType.ORGANIZATION,
+        entity_type=EntityType.RELIGIOUS_ORDER,
         subtype=OrganizationSubtype.RELIGIOUS_ORDER,
     )
 
-    assert repository.loads(repository.dumps(place_record)) == place_record
-    assert (
-        repository.loads(repository.dumps(organization_record)) == organization_record
-    )
+    place_serialized = repository.dumps(place_record)
+    organization_serialized = repository.dumps(organization_record)
+
+    assert 'entity_type = "country"' in place_serialized
+    assert 'entity_type = "religious_order"' in organization_serialized
+    assert repository.loads(place_serialized) == place_record
+    assert repository.loads(organization_serialized) == organization_record
 
 
 def test_source_repository_can_write_and_reload_source_record(tmp_path: Path) -> None:

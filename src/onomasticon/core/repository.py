@@ -105,7 +105,10 @@ class EntityRepository:
         if entity_type is not None:
             lines.append(f"entity_type = {_quote_string(entity_type.value)}")
         subtype = getattr(entity, "subtype", None)
-        if subtype is not None:
+        if subtype is not None and entity_type not in {
+            EntityType.COUNTRY,
+            EntityType.RELIGIOUS_ORDER,
+        }:
             lines.append(f"subtype = {_quote_string(subtype.value)}")
         if entity.redirect is not None:
             lines.append(f"redirect = {_quote_string(entity.redirect)}")
@@ -153,8 +156,12 @@ def _entity_type_for(entity: AnyEntity) -> EntityType | None:
     match entity:
         case Person():
             return EntityType.PERSON
+        case Place(subtype=PlaceSubtype.COUNTRY):
+            return EntityType.COUNTRY
         case Place():
             return EntityType.PLACE
+        case Organization(subtype=OrganizationSubtype.RELIGIOUS_ORDER):
+            return EntityType.RELIGIOUS_ORDER
         case Organization():
             return EntityType.ORGANIZATION
         case Work():
@@ -216,8 +223,12 @@ def _entity_class_for(entity_type: EntityType | None) -> type[AnyEntity]:
     match entity_type:
         case EntityType.PERSON:
             return Person
+        case EntityType.COUNTRY:
+            return Place
         case EntityType.PLACE:
             return Place
+        case EntityType.RELIGIOUS_ORDER:
+            return Organization
         case EntityType.ORGANIZATION:
             return Organization
         case EntityType.WORK:
@@ -237,14 +248,30 @@ def _entity_subtype_kwargs(
     subtype_raw: str | None,
 ) -> dict[str, object]:
     if subtype_raw is None:
-        return {}
+        match entity_type:
+            case EntityType.COUNTRY:
+                return {"subtype": PlaceSubtype.COUNTRY}
+            case EntityType.RELIGIOUS_ORDER:
+                return {"subtype": OrganizationSubtype.RELIGIOUS_ORDER}
+            case _:
+                return {}
     match entity_type:
+        case EntityType.COUNTRY:
+            if subtype_raw != PlaceSubtype.COUNTRY.value:
+                msg = "Subtype must not conflict with entity_type country."
+                raise EntityValidationError(msg)
+            return {"subtype": PlaceSubtype.COUNTRY}
         case EntityType.PLACE:
             try:
                 return {"subtype": PlaceSubtype(subtype_raw)}
             except ValueError as exc:
                 msg = f"Unknown place subtype: {subtype_raw}."
                 raise EntityValidationError(msg) from exc
+        case EntityType.RELIGIOUS_ORDER:
+            if subtype_raw != OrganizationSubtype.RELIGIOUS_ORDER.value:
+                msg = "Subtype must not conflict with entity_type religious_order."
+                raise EntityValidationError(msg)
+            return {"subtype": OrganizationSubtype.RELIGIOUS_ORDER}
         case EntityType.ORGANIZATION:
             try:
                 return {"subtype": OrganizationSubtype(subtype_raw)}

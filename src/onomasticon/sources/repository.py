@@ -73,7 +73,10 @@ class SourceRecordRepository:
         ]
         if record.entity_type is not None:
             lines.append(f"entity_type = {_quote_string(record.entity_type.value)}")
-        if record.subtype is not None:
+        if record.subtype is not None and record.entity_type not in {
+            EntityType.COUNTRY,
+            EntityType.RELIGIOUS_ORDER,
+        }:
             lines.append(f"subtype = {_quote_string(record.subtype.value)}")
         if record.note is not None:
             lines.append(f"note = {_quote_string(record.note)}")
@@ -268,14 +271,30 @@ def _parse_source_record_subtype(
     subtype_raw: str | None,
 ) -> PlaceSubtype | OrganizationSubtype | None:
     if subtype_raw is None:
-        return None
+        match entity_type:
+            case EntityType.COUNTRY:
+                return PlaceSubtype.COUNTRY
+            case EntityType.RELIGIOUS_ORDER:
+                return OrganizationSubtype.RELIGIOUS_ORDER
+            case _:
+                return None
     match entity_type:
+        case EntityType.COUNTRY:
+            if subtype_raw != PlaceSubtype.COUNTRY.value:
+                msg = "Subtype must not conflict with entity_type country."
+                raise EntityValidationError(msg)
+            return PlaceSubtype.COUNTRY
         case EntityType.PLACE:
             try:
                 return PlaceSubtype(subtype_raw)
             except ValueError as exc:
                 msg = f"Unknown place subtype: {subtype_raw}."
                 raise EntityValidationError(msg) from exc
+        case EntityType.RELIGIOUS_ORDER:
+            if subtype_raw != OrganizationSubtype.RELIGIOUS_ORDER.value:
+                msg = "Subtype must not conflict with entity_type religious_order."
+                raise EntityValidationError(msg)
+            return OrganizationSubtype.RELIGIOUS_ORDER
         case EntityType.ORGANIZATION:
             try:
                 return OrganizationSubtype(subtype_raw)

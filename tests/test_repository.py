@@ -109,8 +109,15 @@ def test_repository_round_trips_place_and_organization_subtypes() -> None:
         subtype=OrganizationSubtype.RELIGIOUS_ORDER,
     )
 
-    assert repository.loads(repository.dumps(place)) == place
-    assert repository.loads(repository.dumps(organization)) == organization
+    place_serialized = repository.dumps(place)
+    organization_serialized = repository.dumps(organization)
+
+    assert 'entity_type = "country"' in place_serialized
+    assert 'entity_type = "religious_order"' in organization_serialized
+    assert "subtype =" not in place_serialized
+    assert "subtype =" not in organization_serialized
+    assert repository.loads(place_serialized) == place
+    assert repository.loads(organization_serialized) == organization
 
 
 def test_repository_round_trips_temporal_values() -> None:
@@ -383,3 +390,17 @@ def test_repository_rejects_invalid_subtypes_and_sex_values(
 
     with pytest.raises(EntityValidationError, match=message):
         repository.loads(content)
+
+
+def test_repository_loads_leaf_entity_types_as_broad_classes_with_subtypes() -> None:
+    repository = EntityRepository(layout=RepositoryLayout(root=Path("/repo")))
+
+    country = repository.loads('id = "a1b2c3"\nentity_type = "country"\n')
+    religious_order = repository.loads(
+        'id = "b1c2d3"\nentity_type = "religious_order"\n'
+    )
+
+    assert isinstance(country, Place)
+    assert country.subtype is PlaceSubtype.COUNTRY
+    assert isinstance(religious_order, Organization)
+    assert religious_order.subtype is OrganizationSubtype.RELIGIOUS_ORDER

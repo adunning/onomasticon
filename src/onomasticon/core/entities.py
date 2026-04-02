@@ -16,7 +16,9 @@ class EntityType(StrEnum):
 
     PERSON = "person"
     PLACE = "place"
+    COUNTRY = "country"
     ORGANIZATION = "organization"
+    RELIGIOUS_ORDER = "religious_order"
     WORK = "work"
     EXPRESSION = "expression"
     MANIFESTATION = "manifestation"

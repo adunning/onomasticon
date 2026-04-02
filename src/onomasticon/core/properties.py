@@ -77,8 +77,20 @@ def property_allowed_for_entity_type(
     entity_type_name = getattr(entity_type, "value", entity_type)
     if not isinstance(property_value, str) or not isinstance(entity_type_name, str):
         return False
+    entity_type_name = _canonical_entity_type_name(entity_type_name)
     try:
         normalized_property = StatementProperty(property_value)
     except ValueError:
         return False
     return entity_type_name in _PROPERTY_APPLICABILITY[normalized_property]
+
+
+def _canonical_entity_type_name(entity_type_name: str) -> str:
+    """Collapse leaf entity types onto their broad parent types."""
+    match entity_type_name:
+        case "country":
+            return "place"
+        case "religious_order":
+            return "organization"
+        case _:
+            return entity_type_name
