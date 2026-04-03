@@ -37,3 +37,6 @@ dev = [
 pythonpath = ["src"]
 addopts = "-ra"
 testpaths = ["tests"]
+
+[tool.ty.rules]
+all = "error"
