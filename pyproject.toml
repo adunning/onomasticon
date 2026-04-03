@@ -25,6 +25,7 @@ Repository = "https://github.com/adunning/onomasticon"
 
 [project.scripts]
 onomasticon = "onomasticon.cli:main"
+ono = "onomasticon.cli:main"
 
 [dependency-groups]
 dev = [
