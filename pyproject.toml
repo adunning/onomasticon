@@ -16,7 +16,7 @@ dependencies = [
     "edtf>=5.0.1",
     "langcodes>=3.5.1",
     "language-data>=1.4.0",
-    "lxml>=6.0.2",
+    "lxml>=6.1.0",
 ]
 
 
@@ -29,7 +29,7 @@ ono = "onomasticon.cli:main"
 
 [dependency-groups]
 dev = [
-    "pytest>=9.0.2",
+    "pytest>=9.0.3",
     "ruff>=0.15.8",
     "ty>=0.0.27",
 ]
